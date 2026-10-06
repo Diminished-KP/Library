@@ -70,12 +70,14 @@ async function fetchFromKnihovnyCz(cleanIsbn: string): Promise<Partial<Book> | n
       const authors = Array.isArray(doc.author) ? doc.author.join(', ') : doc.author || doc.author_display;
       const publisher = Array.isArray(doc.publisher) ? doc.publisher.join(', ') : doc.publisher;
       const publishedYear = doc.publishDate || doc.year || doc.publishDate_display;
+      const coverUrl = doc.coverUrl || doc.cover || doc.cover_url || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
 
       return {
         title,
         authors: authors || undefined,
         publisher: publisher || undefined,
         publishedYear: publishedYear ? String(publishedYear) : undefined,
+        coverUrl,
         source: 'Knihovny.cz'
       };
     } catch {
@@ -122,11 +124,19 @@ async function fetchFromGoogleBooks(cleanIsbn: string): Promise<Partial<Book> | 
         if (yearMatch) publishedYear = yearMatch[0];
       }
 
+      let coverUrl = volumeInfo.imageLinks?.thumbnail || volumeInfo.imageLinks?.smallThumbnail;
+      if (coverUrl) {
+        coverUrl = coverUrl.replace(/^http:/, 'https:');
+      } else {
+        coverUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
+      }
+
       return {
         title,
         authors,
         publisher,
         publishedYear,
+        coverUrl,
         source: 'Google Books'
       };
     } catch {
@@ -170,11 +180,17 @@ async function fetchFromOpenLibrary(cleanIsbn: string): Promise<Partial<Book> | 
           if (yearMatch) publishedYear = yearMatch[0];
         }
 
+        let coverUrl = bookData.cover?.large || bookData.cover?.medium || bookData.cover?.small;
+        if (!coverUrl) {
+          coverUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
+        }
+
         return {
           title,
           authors,
           publisher,
           publishedYear,
+          coverUrl,
           source: 'Open Library'
         };
       }
@@ -203,11 +219,19 @@ async function fetchFromOpenLibrary(cleanIsbn: string): Promise<Partial<Book> | 
           const publisher = Array.isArray(doc.publisher) ? doc.publisher[0] : undefined;
           const publishedYear = doc.first_publish_year ? String(doc.first_publish_year) : undefined;
 
+          let coverUrl: string | undefined = undefined;
+          if (doc.cover_i) {
+            coverUrl = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+          } else {
+            coverUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
+          }
+
           return {
             title,
             authors,
             publisher,
             publishedYear,
+            coverUrl,
             source: 'Open Library'
           };
         }
@@ -260,6 +284,7 @@ export async function fetchBookByIsbn(isbn: string): Promise<Book | null> {
         authors: result.authors,
         publishedYear: result.publishedYear,
         publisher: result.publisher,
+        coverUrl: result.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
         source: result.source,
         addedAt: Date.now()
       };
