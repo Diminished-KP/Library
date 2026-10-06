@@ -5,6 +5,7 @@ import { MainMenu } from './components/MainMenu';
 import { ScannerComponent } from './components/Scanner';
 import { ManualEntryModal } from './components/ManualEntryModal';
 import { BookPreviewModal } from './components/BookPreviewModal';
+import { BatchReviewModal } from './components/BatchReviewModal';
 import { LibraryView } from './components/LibraryView';
 import { ArrowLeft, Loader2, Info } from 'lucide-react';
 
@@ -23,10 +24,15 @@ export default function App() {
     }
   });
 
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [batchBooks, setBatchBooks] = useState<Book[]>([]);
+  const [isBatchReviewOpen, setIsBatchReviewOpen] = useState(false);
+
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [scannedBook, setScannedBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [resumeTrigger, setResumeTrigger] = useState(0);
 
   // Sync books with localStorage
   useEffect(() => {
@@ -50,31 +56,57 @@ export default function App() {
     if (!cleanIsbn) return;
 
     // Check if book already exists in library
-    const existing = books.find((b) => b.isbn === cleanIsbn);
-    if (existing) {
+    const existingInLibrary = books.find((b) => b.isbn === cleanIsbn);
+    if (existingInLibrary) {
       showNotification('Tato kniha už je ve vaší knihovně.');
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const book = await fetchBookByIsbn(cleanIsbn);
-      setIsLoading(false);
-
-      if (!book) {
-        // Book not found -> show error alert and return to main menu
-        alert('Číslo ISBN nebo čárový kód nebylo nalezeno.');
-        setCurrentView('menu');
+    if (isBatchMode) {
+      // Check if book is already in current batch
+      const existingInBatch = batchBooks.find((b) => b.isbn === cleanIsbn);
+      if (existingInBatch) {
+        showNotification('Tato kniha už je v seznamu naskenovaných.');
         return;
       }
 
-      // Show preview modal before adding
-      setScannedBook(book);
-    } catch (err) {
-      setIsLoading(false);
-      console.error('Error fetching book:', err);
-      alert('Číslo ISBN nebo čárový kód nebylo nalezeno.');
-      setCurrentView('menu');
+      setIsLoading(true);
+      try {
+        const book = await fetchBookByIsbn(cleanIsbn);
+        setIsLoading(false);
+
+        if (!book) {
+          showNotification(`Číslo ISBN (${cleanIsbn}) nebylo nalezeno.`);
+          return;
+        }
+
+        setBatchBooks((prev) => [book, ...prev]);
+        showNotification(`Naskenováno: ${book.title}`);
+      } catch (err) {
+        setIsLoading(false);
+        console.error('Error fetching book in batch:', err);
+        showNotification(`Číslo ISBN (${cleanIsbn}) nebylo nalezeno.`);
+      }
+    } else {
+      // Single scan mode
+      setIsLoading(true);
+      try {
+        const book = await fetchBookByIsbn(cleanIsbn);
+        setIsLoading(false);
+
+        if (!book) {
+          alert('Číslo ISBN nebo čárový kód nebylo nalezeno.');
+          setResumeTrigger((prev) => prev + 1);
+          return;
+        }
+
+        setScannedBook(book);
+      } catch (err) {
+        setIsLoading(false);
+        console.error('Error fetching book:', err);
+        alert('Číslo ISBN nebo čárový kód nebylo nalezeno.');
+        setResumeTrigger((prev) => prev + 1);
+      }
     }
   };
 
@@ -83,16 +115,41 @@ export default function App() {
       setBooks((prev) => [scannedBook, ...prev]);
       setScannedBook(null);
       showNotification('Kniha byla úspěšně přidána do knihovny.');
+      setResumeTrigger((prev) => prev + 1);
     }
   };
 
   const handleDiscardBook = () => {
     setScannedBook(null);
+    setResumeTrigger((prev) => prev + 1);
   };
 
   const handleDeleteBook = (isbn: string) => {
     setBooks((prev) => prev.filter((b) => b.isbn !== isbn));
     showNotification('Kniha byla smazána z knihovny.');
+  };
+
+  const handleFinishBatch = () => {
+    if (batchBooks.length === 0) {
+      showNotification('Zatím nebyly naskenovány žádné nové knihy.');
+      return;
+    }
+    setIsBatchReviewOpen(true);
+  };
+
+  const handleSaveAllBatch = () => {
+    if (batchBooks.length > 0) {
+      const addedCount = batchBooks.length;
+      setBooks((prev) => [...batchBooks, ...prev]);
+      setBatchBooks([]);
+      setIsBatchReviewOpen(false);
+      showNotification(`Přidáno ${addedCount} knih do knihovny.`);
+      setCurrentView('library');
+    }
+  };
+
+  const handleRemoveFromBatch = (isbn: string) => {
+    setBatchBooks((prev) => prev.filter((b) => b.isbn !== isbn));
   };
 
   return (
@@ -139,8 +196,13 @@ export default function App() {
             </div>
 
             <ScannerComponent
+              isBatchMode={isBatchMode}
+              onToggleBatchMode={setIsBatchMode}
+              batchCount={batchBooks.length}
               onScanSuccess={(isbn) => handleIsbnProcess(isbn)}
               onOpenManualEntry={() => setIsManualModalOpen(true)}
+              onFinishBatch={handleFinishBatch}
+              resumeTrigger={resumeTrigger}
             />
           </div>
         )}
@@ -164,11 +226,20 @@ export default function App() {
         }}
       />
 
-      {/* Book Preview Modal */}
+      {/* Book Preview Modal (Single Scan) */}
       <BookPreviewModal
         book={scannedBook}
         onAdd={handleAddBook}
         onDiscard={handleDiscardBook}
+      />
+
+      {/* Batch Review Modal (Batch Scan) */}
+      <BatchReviewModal
+        isOpen={isBatchReviewOpen}
+        books={batchBooks}
+        onRemoveBook={handleRemoveFromBatch}
+        onSaveAll={handleSaveAllBatch}
+        onDiscardAll={() => setIsBatchReviewOpen(false)}
       />
     </div>
   );

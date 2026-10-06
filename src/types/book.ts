@@ -4,6 +4,7 @@ export interface Book {
   authors?: string;
   publishedYear?: string;
   publisher?: string;
+  coverUrl?: string;
   source?: string;
   addedAt: number;
 }
