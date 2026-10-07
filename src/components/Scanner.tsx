@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2 } from 'lucide-react';
 
+import type { Library } from '../types/book';
+
 interface ScannerProps {
   isBatchMode: boolean;
   onToggleBatchMode: (isBatch: boolean) => void;
@@ -10,6 +12,9 @@ interface ScannerProps {
   onOpenManualEntry: () => void;
   onFinishBatch: () => void;
   resumeTrigger?: number;
+  libraries: Library[];
+  selectedLibraryId: string;
+  onSelectLibrary: (id: string) => void;
 }
 
 export const ScannerComponent: React.FC<ScannerProps> = ({
@@ -20,6 +25,9 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
   onOpenManualEntry,
   onFinishBatch,
   resumeTrigger,
+  libraries,
+  selectedLibraryId,
+  onSelectLibrary,
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -120,6 +128,25 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
 
   return (
     <div className="flex flex-col items-center w-full max-w-lg mx-auto">
+      {/* Target Library Selector Dropdown */}
+      <div className="w-full mb-4 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+        <label htmlFor="library-select" className="text-xs font-semibold text-slate-300 flex items-center gap-2">
+          <span>Pridat do knihovny:</span>
+        </label>
+        <select
+          id="library-select"
+          value={selectedLibraryId}
+          onChange={(e) => onSelectLibrary(e.target.value)}
+          className="w-full sm:w-auto flex-1 bg-slate-950 border border-slate-800 text-blue-400 font-semibold text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
+        >
+          {libraries.map((lib) => (
+            <option key={lib.id} value={lib.id}>
+              {lib.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Mode selector toggle */}
       <div className="w-full bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex gap-1 mb-4 shadow-md">
         <button
@@ -163,6 +190,15 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
       {/* Camera View Area */}
       <div className="relative w-full aspect-square bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center">
         <div id={regionId} className="w-full h-full object-cover" />
+
+        {/* Animated Blue Laser Scanner Line */}
+        {isScanning && !error && (
+          <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6">
+            <div className="relative w-full h-full">
+              <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_15px_#3b82f6,0_0_25px_#60a5fa] animate-scanner-line" />
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="absolute inset-0 bg-slate-950/90 p-6 flex flex-col items-center justify-center text-center">

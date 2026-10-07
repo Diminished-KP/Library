@@ -1,3 +1,10 @@
+export interface Library {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: number;
+}
+
 export interface Book {
   isbn: string;
   title: string;
@@ -7,4 +14,6 @@ export interface Book {
   coverUrl?: string;
   source?: string;
   addedAt: number;
+  libraryId: string;
+  quantity: number;
 }

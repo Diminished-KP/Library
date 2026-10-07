@@ -37,6 +37,8 @@ describe('exportService', () => {
       publishedYear: '1855',
       publisher: 'Albatros',
       addedAt: Date.now(),
+      libraryId: 'default',
+      quantity: 1,
     },
   ];
 

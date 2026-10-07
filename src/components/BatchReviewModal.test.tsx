@@ -18,6 +18,8 @@ describe('BatchReviewModal', () => {
       publisher: 'Albatros',
       coverUrl: 'https://covers.openlibrary.org/b/isbn/9788000058825-M.jpg',
       addedAt: Date.now(),
+      libraryId: 'default',
+      quantity: 1,
     },
     {
       isbn: '9780140328721',
@@ -26,6 +28,8 @@ describe('BatchReviewModal', () => {
       publishedYear: '1970',
       publisher: 'Puffin',
       addedAt: Date.now(),
+      libraryId: 'default',
+      quantity: 1,
     },
   ];
 

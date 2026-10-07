@@ -21,3 +21,22 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+@keyframes scannerLine {
+  0% {
+    top: 0%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 98%;
+    opacity: 1;
+  }
+  100% {
+    top: 0%;
+    opacity: 0.8;
+  }
+}
+
+.animate-scanner-line {
+  animation: scannerLine 2.5s ease-in-out infinite;
+}

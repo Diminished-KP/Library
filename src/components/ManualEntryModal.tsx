@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import { X, Search } from 'lucide-react';
+import type { Library } from '../types/book';
 
 interface ManualEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (isbn: string) => void;
+  libraries?: Library[];
+  selectedLibraryId?: string;
+  onSelectLibrary?: (id: string) => void;
 }
 
 export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  libraries,
+  selectedLibraryId,
+  onSelectLibrary,
 }) => {
   const [isbn, setIsbn] = useState('');
 
@@ -42,6 +49,26 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {libraries && selectedLibraryId && onSelectLibrary && (
+            <div>
+              <label htmlFor="manual-library-select" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Cílová knihovna
+              </label>
+              <select
+                id="manual-library-select"
+                value={selectedLibraryId}
+                onChange={(e) => onSelectLibrary(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-blue-400 font-semibold text-xs rounded-xl px-4 py-3 outline-none focus:border-blue-500 cursor-pointer mb-2"
+              >
+                {libraries.map((lib) => (
+                  <option key={lib.id} value={lib.id}>
+                    {lib.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label htmlFor="isbn-input" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               ISBN Číslo
