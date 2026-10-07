@@ -286,7 +286,9 @@ export async function fetchBookByIsbn(isbn: string): Promise<Book | null> {
         publisher: result.publisher,
         coverUrl: result.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
         source: result.source,
-        addedAt: Date.now()
+        addedAt: Date.now(),
+        libraryId: 'default',
+        quantity: 1,
       };
     }
   }

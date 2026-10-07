@@ -5,6 +5,7 @@ import { Layers, Trash2, Check, BookOpen } from 'lucide-react';
 interface BatchReviewModalProps {
   isOpen: boolean;
   books: Book[];
+  libraryName?: string;
   onRemoveBook: (isbn: string) => void;
   onSaveAll: () => void;
   onDiscardAll: () => void;
@@ -35,6 +36,7 @@ const BookCover: React.FC<{ coverUrl?: string; title: string }> = ({ coverUrl, t
 export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
   isOpen,
   books,
+  libraryName,
   onRemoveBook,
   onSaveAll,
   onDiscardAll,
@@ -53,7 +55,7 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
               Naskenované knihy ({books.length})
             </h2>
             <p className="text-xs text-slate-400">
-              Zkontrolovat a uložit hromadně naskenované knihy
+              Zkontrolovat a uložit hromadně naskenované knihy {libraryName ? `do: ${libraryName}` : ''}
             </p>
           </div>
         </div>

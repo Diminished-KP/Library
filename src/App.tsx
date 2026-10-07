@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Book } from './types/book';
+import type { Book, Library } from './types/book';
 import { fetchBookByIsbn, normalizeIsbn } from './services/bookService';
 import { MainMenu } from './components/MainMenu';
 import { ScannerComponent } from './components/Scanner';
@@ -7,18 +7,51 @@ import { ManualEntryModal } from './components/ManualEntryModal';
 import { BookPreviewModal } from './components/BookPreviewModal';
 import { BatchReviewModal } from './components/BatchReviewModal';
 import { LibraryView } from './components/LibraryView';
+import { AddLibraryModal } from './components/AddLibraryModal';
 import { ArrowLeft, Loader2, Info } from 'lucide-react';
 
 type View = 'menu' | 'scanner' | 'library';
 
-const STORAGE_KEY = 'knihovna_books';
+const STORAGE_KEY_BOOKS = 'knihovna_books';
+const STORAGE_KEY_LIBRARIES = 'knihovna_libraries';
+
+const DEFAULT_LIBRARY: Library = {
+  id: 'default',
+  name: 'Moje knihovna',
+  description: 'Hlavní knihovna',
+  createdAt: Date.now(),
+};
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('menu');
+
+  const [libraries, setLibraries] = useState<Library[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_LIBRARIES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse libraries from localStorage', e);
+    }
+    return [DEFAULT_LIBRARY];
+  });
+
+  const [activeLibraryId, setActiveLibraryId] = useState<string>(() => libraries[0]?.id || 'default');
+
   const [books, setBooks] = useState<Book[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem(STORAGE_KEY_BOOKS);
+      if (saved) {
+        const parsed: Book[] = JSON.parse(saved);
+        return parsed.map((b) => ({
+          ...b,
+          libraryId: b.libraryId || 'default',
+          quantity: typeof b.quantity === 'number' ? b.quantity : 1,
+        }));
+      }
+      return [];
     } catch {
       return [];
     }
@@ -29,6 +62,7 @@ export default function App() {
   const [isBatchReviewOpen, setIsBatchReviewOpen] = useState(false);
 
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isAddLibraryModalOpen, setIsAddLibraryModalOpen] = useState(false);
   const [scannedBook, setScannedBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
@@ -37,11 +71,47 @@ export default function App() {
   // Sync books with localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+      localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(books));
     } catch (e) {
       console.error('Failed to save books to localStorage', e);
     }
   }, [books]);
+
+  // Sync libraries with localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_LIBRARIES, JSON.stringify(libraries));
+    } catch (e) {
+      console.error('Failed to save libraries to localStorage', e);
+    }
+  }, [libraries]);
+
+  const handleAddLibrary = (name: string, description: string) => {
+    const newLib: Library = {
+      id: 'lib_' + Date.now(),
+      name,
+      description,
+      createdAt: Date.now(),
+    };
+    setLibraries((prev) => [...prev, newLib]);
+    setActiveLibraryId(newLib.id);
+    showNotification(`Knihovna "${name}" byla úspěšně vytvořena.`);
+  };
+
+  const handleDeleteLibrary = (libraryId: string) => {
+    if (libraries.length <= 1) {
+      alert('Nelze smazat jedinou zbývající knihovnu.');
+      return;
+    }
+    const target = libraries.find((l) => l.id === libraryId);
+    if (confirm(`Opravdu chcete smazat knihovnu "${target?.name}" včetně všech jejích knih?`)) {
+      setBooks((prev) => prev.filter((b) => b.libraryId !== libraryId));
+      setLibraries((prev) => prev.filter((l) => l.id !== libraryId));
+      const remaining = libraries.filter((l) => l.id !== libraryId);
+      setActiveLibraryId(remaining[0]?.id || 'default');
+      showNotification('Knihovna byla smazána.');
+    }
+  };
 
   // Show floating notification message
   const showNotification = (msg: string) => {
@@ -55,33 +125,40 @@ export default function App() {
     const cleanIsbn = normalizeIsbn(rawIsbn);
     if (!cleanIsbn) return;
 
-    // Check if book already exists in library
-    const existingInLibrary = books.find((b) => b.isbn === cleanIsbn);
-    if (existingInLibrary) {
-      showNotification('Tato kniha už je ve vaší knihovně.');
-      return;
-    }
+    const existingInLibrary = books.find(
+      (b) => b.isbn === cleanIsbn && b.libraryId === activeLibraryId
+    );
 
     if (isBatchMode) {
-      // Check if book is already in current batch
       const existingInBatch = batchBooks.find((b) => b.isbn === cleanIsbn);
       if (existingInBatch) {
-        showNotification('Tato kniha už je v seznamu naskenovaných.');
+        setBatchBooks((prev) =>
+          prev.map((b) =>
+            b.isbn === cleanIsbn ? { ...b, quantity: (b.quantity || 1) + 1 } : b
+          )
+        );
+        showNotification(`Zvýšen počet u naskenované knihy: ${existingInBatch.title}`);
         return;
       }
 
       setIsLoading(true);
       try {
-        const book = await fetchBookByIsbn(cleanIsbn);
+        const fetchedBook = await fetchBookByIsbn(cleanIsbn);
         setIsLoading(false);
 
-        if (!book) {
+        if (!fetchedBook) {
           showNotification(`Číslo ISBN (${cleanIsbn}) nebylo nalezeno.`);
           return;
         }
 
-        setBatchBooks((prev) => [book, ...prev]);
-        showNotification(`Naskenováno: ${book.title}`);
+        const bookToAdd: Book = {
+          ...fetchedBook,
+          libraryId: activeLibraryId,
+          quantity: 1,
+        };
+
+        setBatchBooks((prev) => [bookToAdd, ...prev]);
+        showNotification(`Naskenováno: ${bookToAdd.title}`);
       } catch (err) {
         setIsLoading(false);
         console.error('Error fetching book in batch:', err);
@@ -91,16 +168,22 @@ export default function App() {
       // Single scan mode
       setIsLoading(true);
       try {
-        const book = await fetchBookByIsbn(cleanIsbn);
+        const fetchedBook = await fetchBookByIsbn(cleanIsbn);
         setIsLoading(false);
 
-        if (!book) {
+        if (!fetchedBook) {
           alert('Číslo ISBN nebo čárový kód nebylo nalezeno.');
           setResumeTrigger((prev) => prev + 1);
           return;
         }
 
-        setScannedBook(book);
+        const bookToAdd: Book = {
+          ...fetchedBook,
+          libraryId: activeLibraryId,
+          quantity: existingInLibrary ? existingInLibrary.quantity + 1 : 1,
+        };
+
+        setScannedBook(bookToAdd);
       } catch (err) {
         setIsLoading(false);
         console.error('Error fetching book:', err);
@@ -112,7 +195,20 @@ export default function App() {
 
   const handleAddBook = () => {
     if (scannedBook) {
-      setBooks((prev) => [scannedBook, ...prev]);
+      setBooks((prev) => {
+        const existingIdx = prev.findIndex(
+          (b) => b.isbn === scannedBook.isbn && b.libraryId === scannedBook.libraryId
+        );
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          updated[existingIdx] = {
+            ...updated[existingIdx],
+            quantity: updated[existingIdx].quantity + 1,
+          };
+          return updated;
+        }
+        return [{ ...scannedBook, quantity: 1 }, ...prev];
+      });
       setScannedBook(null);
       showNotification('Kniha byla úspěšně přidána do knihovny.');
       setResumeTrigger((prev) => prev + 1);
@@ -124,9 +220,22 @@ export default function App() {
     setResumeTrigger((prev) => prev + 1);
   };
 
-  const handleDeleteBook = (isbn: string) => {
-    setBooks((prev) => prev.filter((b) => b.isbn !== isbn));
-    showNotification('Kniha byla smazána z knihovny.');
+  const handleDeleteBook = (isbn: string, libraryId: string, removeAll: boolean) => {
+    setBooks((prev) => {
+      const existing = prev.find((b) => b.isbn === isbn && b.libraryId === libraryId);
+      if (!existing) return prev;
+
+      if (removeAll || existing.quantity <= 1) {
+        return prev.filter((b) => !(b.isbn === isbn && b.libraryId === libraryId));
+      } else {
+        return prev.map((b) =>
+          b.isbn === isbn && b.libraryId === libraryId
+            ? { ...b, quantity: b.quantity - 1 }
+            : b
+        );
+      }
+    });
+    showNotification(removeAll ? 'Kniha byla smazána z knihovny.' : 'Počet kusů byl snížen o 1.');
   };
 
   const handleFinishBatch = () => {
@@ -139,11 +248,28 @@ export default function App() {
 
   const handleSaveAllBatch = () => {
     if (batchBooks.length > 0) {
-      const addedCount = batchBooks.length;
-      setBooks((prev) => [...batchBooks, ...prev]);
+      setBooks((prev) => {
+        let updated = [...prev];
+        batchBooks.forEach((batchBook) => {
+          const idx = updated.findIndex(
+            (b) => b.isbn === batchBook.isbn && b.libraryId === batchBook.libraryId
+          );
+          if (idx >= 0) {
+            updated[idx] = {
+              ...updated[idx],
+              quantity: updated[idx].quantity + (batchBook.quantity || 1),
+            };
+          } else {
+            updated = [{ ...batchBook, quantity: batchBook.quantity || 1 }, ...updated];
+          }
+        });
+        return updated;
+      });
+
+      const totalQuantity = batchBooks.reduce((acc, b) => acc + (b.quantity || 1), 0);
       setBatchBooks([]);
       setIsBatchReviewOpen(false);
-      showNotification(`Přidáno ${addedCount} knih do knihovny.`);
+      showNotification(`Přidáno ${totalQuantity} ks knih do knihovny.`);
       setCurrentView('library');
     }
   };
@@ -178,7 +304,7 @@ export default function App() {
           <MainMenu
             onNavigateToScanner={() => setCurrentView('scanner')}
             onNavigateToLibrary={() => setCurrentView('library')}
-            bookCount={books.length}
+            bookCount={books.reduce((acc, b) => acc + (b.quantity || 1), 0)}
           />
         )}
 
@@ -198,11 +324,14 @@ export default function App() {
             <ScannerComponent
               isBatchMode={isBatchMode}
               onToggleBatchMode={setIsBatchMode}
-              batchCount={batchBooks.length}
+              batchCount={batchBooks.reduce((acc, b) => acc + (b.quantity || 1), 0)}
               onScanSuccess={(isbn) => handleIsbnProcess(isbn)}
               onOpenManualEntry={() => setIsManualModalOpen(true)}
               onFinishBatch={handleFinishBatch}
               resumeTrigger={resumeTrigger}
+              libraries={libraries}
+              selectedLibraryId={activeLibraryId}
+              onSelectLibrary={setActiveLibraryId}
             />
           </div>
         )}
@@ -210,6 +339,11 @@ export default function App() {
         {currentView === 'library' && (
           <LibraryView
             books={books}
+            libraries={libraries}
+            activeLibraryId={activeLibraryId}
+            onSelectLibrary={setActiveLibraryId}
+            onOpenAddLibraryModal={() => setIsAddLibraryModalOpen(true)}
+            onDeleteLibrary={handleDeleteLibrary}
             onBackToMenu={() => setCurrentView('menu')}
             onDeleteBook={handleDeleteBook}
           />
@@ -224,11 +358,22 @@ export default function App() {
           setIsManualModalOpen(false);
           handleIsbnProcess(isbn);
         }}
+        libraries={libraries}
+        selectedLibraryId={activeLibraryId}
+        onSelectLibrary={setActiveLibraryId}
+      />
+
+      {/* Add Library Modal */}
+      <AddLibraryModal
+        isOpen={isAddLibraryModalOpen}
+        onClose={() => setIsAddLibraryModalOpen(false)}
+        onAddLibrary={handleAddLibrary}
       />
 
       {/* Book Preview Modal (Single Scan) */}
       <BookPreviewModal
         book={scannedBook}
+        libraryName={libraries.find((l) => l.id === activeLibraryId)?.name}
         onAdd={handleAddBook}
         onDiscard={handleDiscardBook}
       />
@@ -237,6 +382,7 @@ export default function App() {
       <BatchReviewModal
         isOpen={isBatchReviewOpen}
         books={batchBooks}
+        libraryName={libraries.find((l) => l.id === activeLibraryId)?.name}
         onRemoveBook={handleRemoveFromBatch}
         onSaveAll={handleSaveAllBatch}
         onDiscardAll={() => setIsBatchReviewOpen(false)}

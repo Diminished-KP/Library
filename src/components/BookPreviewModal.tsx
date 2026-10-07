@@ -4,12 +4,14 @@ import { Plus, Trash2, Book as BookIcon } from 'lucide-react';
 
 interface BookPreviewModalProps {
   book: Book | null;
+  libraryName?: string;
   onAdd: () => void;
   onDiscard: () => void;
 }
 
 export const BookPreviewModal: React.FC<BookPreviewModalProps> = ({
   book,
+  libraryName,
   onAdd,
   onDiscard,
 }) => {
@@ -28,6 +30,11 @@ export const BookPreviewModal: React.FC<BookPreviewModalProps> = ({
             <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
               Nalezená kniha ({book.source || 'Vyhledávač'})
             </span>
+            {libraryName && (
+              <p className="text-xs text-emerald-400 font-medium mt-0.5">
+                Přidat do: {libraryName}
+              </p>
+            )}
             <p className="text-xs text-slate-500 font-mono">ISBN: {book.isbn}</p>
           </div>
         </div>
