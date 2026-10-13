@@ -41,7 +41,7 @@ export function convertIsbn10To13(isbn10: string): string | null {
  */
 export function cleanCatalogText(str: string | undefined | null): string | undefined {
   if (!str) return undefined;
-  const cleaned = str.trim().replace(/[\s,:\/\.\;]+$/, '').trim();
+  const cleaned = str.trim().replace(/[\s,:/.;]+$/, '').trim();
   return cleaned || undefined;
 }
 
@@ -381,7 +381,7 @@ export async function fetchBookByIsbnDetailed(isbn: string): Promise<BookFetchRe
         },
       };
     }
-  } catch (e) {
+  } catch {
     networkErrorOccurred = true;
   }
 
@@ -405,7 +405,7 @@ export async function fetchBookByIsbnDetailed(isbn: string): Promise<BookFetchRe
         },
       };
     }
-  } catch (e) {
+  } catch {
     networkErrorOccurred = true;
   }
 
@@ -429,7 +429,7 @@ export async function fetchBookByIsbnDetailed(isbn: string): Promise<BookFetchRe
         },
       };
     }
-  } catch (e) {
+  } catch {
     networkErrorOccurred = true;
   }
 
