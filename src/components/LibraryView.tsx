@@ -1,16 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import type { Book, Library } from '../types/book';
-import { exportToPdf, exportToExcel, exportToCsv } from '../services/exportService';
 import { DeleteBookModal } from './DeleteBookModal';
+import { ExportModal } from './ExportModal';
 import {
   ArrowLeft,
   Trash2,
   Search,
   Library as LibraryIcon,
   BookOpen,
-  FileText,
-  FileSpreadsheet,
-  Table,
+  Download,
   Plus,
 } from 'lucide-react';
 
@@ -59,6 +57,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingBook, setDeletingBook] = useState<Book | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const activeLibrary = libraries.find((l) => l.id === activeLibraryId) || libraries[0];
 
@@ -217,30 +216,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-xs font-semibold text-slate-400 mr-1">Exportovat:</span>
             <button
-              onClick={() => exportToPdf(filteredBooks)}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
-              title="Exportovat seznam jako PDF"
+              onClick={() => setIsExportModalOpen(true)}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-2 shadow-md"
+              title="Exportovat seznam knih"
             >
-              <FileText className="w-3.5 h-3.5 text-rose-400" />
-              PDF
-            </button>
-            <button
-              onClick={() => exportToExcel(filteredBooks)}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
-              title="Exportovat seznam do Excelu (.xlsx)"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-              Excel (.xlsx)
-            </button>
-            <button
-              onClick={() => exportToCsv(filteredBooks)}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
-              title="Exportovat seznam do CSV (Google Sheets)"
-            >
-              <Table className="w-3.5 h-3.5 text-emerald-400" />
-              CSV / Google Sheets
+              <Download className="w-4 h-4 text-blue-400" />
+              <span>Exportovat</span>
             </button>
           </div>
         </div>
@@ -343,6 +325,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        books={filteredBooks}
+      />
 
       {/* Delete Book Modal */}
       {deletingBook && (

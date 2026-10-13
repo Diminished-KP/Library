@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Book, Library } from './types/book';
-import { fetchBookByIsbn, normalizeIsbn } from './services/bookService';
+import { fetchBookByIsbnDetailed, normalizeIsbn } from './services/bookService';
 import { MainMenu } from './components/MainMenu';
 import { ScannerComponent } from './components/Scanner';
 import { ManualEntryModal } from './components/ManualEntryModal';
@@ -143,16 +143,16 @@ export default function App() {
 
       setIsLoading(true);
       try {
-        const fetchedBook = await fetchBookByIsbn(cleanIsbn);
+        const fetchResult = await fetchBookByIsbnDetailed(cleanIsbn);
         setIsLoading(false);
 
-        if (!fetchedBook) {
-          showNotification(`Číslo ISBN (${cleanIsbn}) nebylo nalezeno.`);
+        if (!fetchResult.success) {
+          showNotification(fetchResult.message);
           return;
         }
 
         const bookToAdd: Book = {
-          ...fetchedBook,
+          ...fetchResult.book,
           libraryId: activeLibraryId,
           quantity: 1,
         };
@@ -162,23 +162,23 @@ export default function App() {
       } catch (err) {
         setIsLoading(false);
         console.error('Error fetching book in batch:', err);
-        showNotification(`Číslo ISBN (${cleanIsbn}) nebylo nalezeno.`);
+        showNotification(`Chyba při vyhledávání ISBN ${cleanIsbn}. Zkontrolujte připojení.`);
       }
     } else {
       // Single scan mode
       setIsLoading(true);
       try {
-        const fetchedBook = await fetchBookByIsbn(cleanIsbn);
+        const fetchResult = await fetchBookByIsbnDetailed(cleanIsbn);
         setIsLoading(false);
 
-        if (!fetchedBook) {
-          alert('Číslo ISBN nebo čárový kód nebylo nalezeno.');
+        if (!fetchResult.success) {
+          showNotification(fetchResult.message);
           setResumeTrigger((prev) => prev + 1);
           return;
         }
 
         const bookToAdd: Book = {
-          ...fetchedBook,
+          ...fetchResult.book,
           libraryId: activeLibraryId,
           quantity: existingInLibrary ? existingInLibrary.quantity + 1 : 1,
         };
@@ -187,7 +187,7 @@ export default function App() {
       } catch (err) {
         setIsLoading(false);
         console.error('Error fetching book:', err);
-        alert('Číslo ISBN nebo čárový kód nebylo nalezeno.');
+        showNotification(`Chyba při vyhledávání ISBN ${cleanIsbn}. Zkontrolujte připojení.`);
         setResumeTrigger((prev) => prev + 1);
       }
     }

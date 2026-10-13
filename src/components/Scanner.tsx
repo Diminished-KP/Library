@@ -179,7 +179,7 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
         <div className="w-full mb-3 bg-blue-950/60 border border-blue-500/30 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs font-medium text-blue-200 animate-in fade-in">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-400 animate-pulse" />
-            <span>Hromadný režim (pauza 3s mezi skeny)</span>
+            <span>Hromadný režim</span>
           </div>
           <span className="bg-blue-600/30 border border-blue-400/30 text-blue-100 px-2.5 py-0.5 rounded-full font-bold">
             {batchCount} knih

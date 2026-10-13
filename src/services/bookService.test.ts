@@ -7,6 +7,7 @@ import {
   cleanAuthorName,
   parseAuthors,
   fetchBookByIsbn,
+  fetchBookByIsbnDetailed,
 } from './bookService';
 
 const SAMPLE_KNIHOVNY_RESPONSE = {
@@ -179,5 +180,27 @@ describe('Knihovny.cz API integration', () => {
 
     const book = await fetchBookByIsbn('9788025703670');
     expect(book).toBeNull();
+  });
+
+  it('should return INVALID_ISBN error type for bad ISBN format in fetchBookByIsbnDetailed', async () => {
+    const result = await fetchBookByIsbnDetailed('123');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errorType).toBe('INVALID_ISBN');
+      expect(result.message).toContain('nemá platný formát ISBN');
+    }
+  });
+
+  it('should return NOT_FOUND error type with clear message when book is missing', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      return { ok: false } as Response;
+    });
+
+    const result = await fetchBookByIsbnDetailed('9788025703670');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errorType).toBe('NOT_FOUND');
+      expect(result.message).toContain('nebyla nalezena v žádné z databází');
+    }
   });
 });
