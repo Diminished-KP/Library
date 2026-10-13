@@ -341,37 +341,117 @@ async function fetchFromOpenLibrary(cleanIsbn: string): Promise<Partial<Book> | 
  * Tries sources in order: Knihovny.cz -> Google Books -> Open Library.
  * Automatically converts input ISBN to ISBN-13.
  */
-export async function fetchBookByIsbn(isbn: string): Promise<Book | null> {
+export type BookFetchResult =
+  | { success: true; book: Book }
+  | { success: false; errorType: 'INVALID_ISBN' | 'NOT_FOUND' | 'NETWORK_ERROR'; message: string };
+
+/**
+ * Main book lookup function with detailed error diagnostics.
+ * Tries sources in order: Knihovny.cz -> Google Books -> Open Library.
+ */
+export async function fetchBookByIsbnDetailed(isbn: string): Promise<BookFetchResult> {
   const cleanIsbn = normalizeIsbn(isbn);
-  if (!cleanIsbn) return null;
-
-  // Source 1: Knihovny.cz
-  let result = await fetchFromKnihovnyCz(cleanIsbn);
-
-  // Source 2: Google Books
-  if (!result) {
-    result = await fetchFromGoogleBooks(cleanIsbn);
-  }
-
-  // Source 3: Open Library
-  if (!result) {
-    result = await fetchFromOpenLibrary(cleanIsbn);
-  }
-
-  if (result && result.title) {
+  if (!cleanIsbn || (cleanIsbn.length !== 10 && cleanIsbn.length !== 13)) {
     return {
-      isbn: cleanIsbn,
-      title: result.title,
-      authors: result.authors,
-      publishedYear: result.publishedYear,
-      publisher: result.publisher,
-      coverUrl: result.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
-      source: result.source,
-      addedAt: Date.now(),
-      libraryId: 'default',
-      quantity: 1,
+      success: false,
+      errorType: 'INVALID_ISBN',
+      message: `Kód "${isbn}" nemá platný formát ISBN (vyžadováno 10 nebo 13 číslic).`,
     };
   }
 
-  return null;
+  let networkErrorOccurred = false;
+
+  // Source 1: Knihovny.cz
+  try {
+    const result1 = await fetchFromKnihovnyCz(cleanIsbn);
+    if (result1 && result1.title) {
+      return {
+        success: true,
+        book: {
+          isbn: cleanIsbn,
+          title: result1.title,
+          authors: result1.authors,
+          publishedYear: result1.publishedYear,
+          publisher: result1.publisher,
+          coverUrl: result1.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
+          source: result1.source,
+          addedAt: Date.now(),
+          libraryId: 'default',
+          quantity: 1,
+        },
+      };
+    }
+  } catch (e) {
+    networkErrorOccurred = true;
+  }
+
+  // Source 2: Google Books
+  try {
+    const result2 = await fetchFromGoogleBooks(cleanIsbn);
+    if (result2 && result2.title) {
+      return {
+        success: true,
+        book: {
+          isbn: cleanIsbn,
+          title: result2.title,
+          authors: result2.authors,
+          publishedYear: result2.publishedYear,
+          publisher: result2.publisher,
+          coverUrl: result2.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
+          source: result2.source,
+          addedAt: Date.now(),
+          libraryId: 'default',
+          quantity: 1,
+        },
+      };
+    }
+  } catch (e) {
+    networkErrorOccurred = true;
+  }
+
+  // Source 3: Open Library
+  try {
+    const result3 = await fetchFromOpenLibrary(cleanIsbn);
+    if (result3 && result3.title) {
+      return {
+        success: true,
+        book: {
+          isbn: cleanIsbn,
+          title: result3.title,
+          authors: result3.authors,
+          publishedYear: result3.publishedYear,
+          publisher: result3.publisher,
+          coverUrl: result3.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
+          source: result3.source,
+          addedAt: Date.now(),
+          libraryId: 'default',
+          quantity: 1,
+        },
+      };
+    }
+  } catch (e) {
+    networkErrorOccurred = true;
+  }
+
+  if (networkErrorOccurred) {
+    return {
+      success: false,
+      errorType: 'NETWORK_ERROR',
+      message: `Chyba při připojení k serveru při vyhledávání ISBN ${cleanIsbn}. Zkontrolujte připojení k internetu.`,
+    };
+  }
+
+  return {
+    success: false,
+    errorType: 'NOT_FOUND',
+    message: `Kniha s ISBN ${cleanIsbn} nebyla nalezena v žádné z databází (Knihovny.cz, Google Books, Open Library).`,
+  };
+}
+
+/**
+ * Legacy wrapper for backward compatibility.
+ */
+export async function fetchBookByIsbn(isbn: string): Promise<Book | null> {
+  const result = await fetchBookByIsbnDetailed(isbn);
+  return result.success ? result.book : null;
 }
