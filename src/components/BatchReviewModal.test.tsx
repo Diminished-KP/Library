@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { BatchReviewModal } from './BatchReviewModal';
+import { translations } from '../services/i18n';
 import type { Book } from '../types/book';
 
 describe('BatchReviewModal', () => {
@@ -45,6 +46,7 @@ describe('BatchReviewModal', () => {
         onRemoveBook={handleRemove}
         onSaveAll={handleSave}
         onDiscardAll={handleDiscard}
+        t={translations.cs}
       />
     );
 
@@ -63,11 +65,12 @@ describe('BatchReviewModal', () => {
         onRemoveBook={vi.fn()}
         onSaveAll={handleSave}
         onDiscardAll={vi.fn()}
+        t={translations.cs}
       />
     );
 
-    const saveButtons = screen.getAllByRole('button', { name: /Uložit do knihovny/i });
-    fireEvent.click(saveButtons[0]);
+    const saveButton = screen.getByText(/Uložit vše do knihovny/i);
+    fireEvent.click(saveButton);
     expect(handleSave).toHaveBeenCalledTimes(1);
   });
 });

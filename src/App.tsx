@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Book, Library } from './types/book';
 import type { Language } from './services/i18n';
 import type { ThemeId } from './types/theme';
@@ -26,7 +26,7 @@ const DEFAULT_LIBRARY: Library = {
   id: 'default',
   name: 'Moje knihovna',
   description: 'Hlavní knihovna',
-  createdAt: Date.now(),
+  createdAt: 0,
 };
 
 export default function App() {
@@ -140,17 +140,29 @@ export default function App() {
     }
   }, [libraries]);
 
-  const handleAddLibrary = (name: string, description: string) => {
-    const newLib: Library = {
-      id: 'lib_' + Date.now(),
-      name,
-      description,
-      createdAt: Date.now(),
-    };
-    setLibraries((prev) => [...prev, newLib]);
-    setActiveLibraryId(newLib.id);
+  // Show floating notification message
+  const showNotification = useCallback((msg: string) => {
+    setNotification(msg);
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  }, []);
+
+  const handleAddLibrary = useCallback((name: string, description: string) => {
+    const timestamp = Date.now();
+    const id = 'lib_' + timestamp;
+    setLibraries((prev) => [
+      ...prev,
+      {
+        id,
+        name,
+        description,
+        createdAt: timestamp,
+      },
+    ]);
+    setActiveLibraryId(id);
     showNotification(`${t.libraryCreatedSuccess} (${name})`);
-  };
+  }, [showNotification, t.libraryCreatedSuccess]);
 
   const handleDeleteLibrary = (libraryId: string) => {
     if (libraries.length <= 1) {
@@ -165,14 +177,6 @@ export default function App() {
       setActiveLibraryId(remaining[0]?.id || 'default');
       showNotification(t.libraryDeletedSuccess);
     }
-  };
-
-  // Show floating notification message
-  const showNotification = (msg: string) => {
-    setNotification(msg);
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000);
   };
 
   const handleIsbnProcess = async (rawIsbn: string) => {
@@ -401,6 +405,9 @@ export default function App() {
               libraries={libraries}
               selectedLibraryId={activeLibraryId}
               onSelectLibrary={setActiveLibraryId}
+              t={t}
+              currentLanguage={language}
+              currentTheme={theme}
             />
           </div>
         )}
@@ -415,6 +422,9 @@ export default function App() {
             onDeleteLibrary={handleDeleteLibrary}
             onBackToMenu={() => setCurrentView('menu')}
             onDeleteBook={handleDeleteBook}
+            t={t}
+            currentLanguage={language}
+            currentTheme={theme}
           />
         )}
       </main>
@@ -430,6 +440,8 @@ export default function App() {
         libraries={libraries}
         selectedLibraryId={activeLibraryId}
         onSelectLibrary={setActiveLibraryId}
+        t={t}
+        currentTheme={theme}
       />
 
       {/* Add Library Modal */}
@@ -437,6 +449,8 @@ export default function App() {
         isOpen={isAddLibraryModalOpen}
         onClose={() => setIsAddLibraryModalOpen(false)}
         onAddLibrary={handleAddLibrary}
+        t={t}
+        currentTheme={theme}
       />
 
       {/* Book Preview Modal (Single Scan) */}
@@ -445,6 +459,8 @@ export default function App() {
         libraryName={libraries.find((l) => l.id === activeLibraryId)?.name}
         onAdd={handleAddBook}
         onDiscard={handleDiscardBook}
+        t={t}
+        currentTheme={theme}
       />
 
       {/* Batch Review Modal (Batch Scan) */}
@@ -455,6 +471,8 @@ export default function App() {
         onRemoveBook={handleRemoveFromBatch}
         onSaveAll={handleSaveAllBatch}
         onDiscardAll={() => setIsBatchReviewOpen(false)}
+        t={t}
+        currentTheme={theme}
       />
     </div>
   );
