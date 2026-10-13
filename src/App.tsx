@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { Book, Library } from './types/book';
+import type { Language } from './services/i18n';
+import type { ThemeId } from './types/theme';
+import { translations, formatBookCount } from './services/i18n';
+import { themes } from './types/theme';
 import { fetchBookByIsbnDetailed, normalizeIsbn } from './services/bookService';
 import { MainMenu } from './components/MainMenu';
+import { SettingsView } from './components/SettingsView';
 import { ScannerComponent } from './components/Scanner';
 import { ManualEntryModal } from './components/ManualEntryModal';
 import { BookPreviewModal } from './components/BookPreviewModal';
@@ -10,10 +15,12 @@ import { LibraryView } from './components/LibraryView';
 import { AddLibraryModal } from './components/AddLibraryModal';
 import { ArrowLeft, Loader2, Info } from 'lucide-react';
 
-type View = 'menu' | 'scanner' | 'library';
+type View = 'menu' | 'scanner' | 'library' | 'settings';
 
 const STORAGE_KEY_BOOKS = 'knihovna_books';
 const STORAGE_KEY_LIBRARIES = 'knihovna_libraries';
+const STORAGE_KEY_LANG = 'knihovna_language';
+const STORAGE_KEY_THEME = 'knihovna_theme';
 
 const DEFAULT_LIBRARY: Library = {
   id: 'default',
@@ -25,6 +32,35 @@ const DEFAULT_LIBRARY: Library = {
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('menu');
 
+  // Language state
+  const [language, setLanguage] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_LANG);
+      if (saved && (saved === 'cs' || saved === 'en' || saved === 'es')) {
+        return saved as Language;
+      }
+    } catch (e) {
+      console.error('Failed to parse language from localStorage', e);
+    }
+    return 'cs';
+  });
+
+  // Theme state
+  const [theme, setTheme] = useState<ThemeId>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_THEME);
+      if (saved && themes[saved as ThemeId]) {
+        return saved as ThemeId;
+      }
+    } catch (e) {
+      console.error('Failed to parse theme from localStorage', e);
+    }
+    return 'default';
+  });
+
+  const t = translations[language] || translations.cs;
+  const activeThemeConfig = themes[theme] || themes.default;
+
   const [libraries, setLibraries] = useState<Library[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_LIBRARIES);
@@ -35,7 +71,7 @@ export default function App() {
     } catch (e) {
       console.error('Failed to parse libraries from localStorage', e);
     }
-    return [DEFAULT_LIBRARY];
+    return [{ ...DEFAULT_LIBRARY, name: t.myLibrary }];
   });
 
   const [activeLibraryId, setActiveLibraryId] = useState<string>(() => libraries[0]?.id || 'default');
@@ -68,6 +104,24 @@ export default function App() {
   const [notification, setNotification] = useState<string | null>(null);
   const [resumeTrigger, setResumeTrigger] = useState(0);
 
+  // Sync language with localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_LANG, language);
+    } catch (e) {
+      console.error('Failed to save language to localStorage', e);
+    }
+  }, [language]);
+
+  // Sync theme with localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_THEME, theme);
+    } catch (e) {
+      console.error('Failed to save theme to localStorage', e);
+    }
+  }, [theme]);
+
   // Sync books with localStorage
   useEffect(() => {
     try {
@@ -95,21 +149,21 @@ export default function App() {
     };
     setLibraries((prev) => [...prev, newLib]);
     setActiveLibraryId(newLib.id);
-    showNotification(`Knihovna "${name}" byla úspěšně vytvořena.`);
+    showNotification(`${t.libraryCreatedSuccess} (${name})`);
   };
 
   const handleDeleteLibrary = (libraryId: string) => {
     if (libraries.length <= 1) {
-      alert('Nelze smazat jedinou zbývající knihovnu.');
+      alert(t.cannotDeleteLastLibrary);
       return;
     }
     const target = libraries.find((l) => l.id === libraryId);
-    if (confirm(`Opravdu chcete smazat knihovnu "${target?.name}" včetně všech jejích knih?`)) {
+    if (confirm(`${t.confirmDeleteLibrary} (${target?.name})`)) {
       setBooks((prev) => prev.filter((b) => b.libraryId !== libraryId));
       setLibraries((prev) => prev.filter((l) => l.id !== libraryId));
       const remaining = libraries.filter((l) => l.id !== libraryId);
       setActiveLibraryId(remaining[0]?.id || 'default');
-      showNotification('Knihovna byla smazána.');
+      showNotification(t.libraryDeletedSuccess);
     }
   };
 
@@ -137,7 +191,7 @@ export default function App() {
             b.isbn === cleanIsbn ? { ...b, quantity: (b.quantity || 1) + 1 } : b
           )
         );
-        showNotification(`Zvýšen počet u naskenované knihy: ${existingInBatch.title}`);
+        showNotification(`${t.quantityIncreasedInBatch} ${existingInBatch.title}`);
         return;
       }
 
@@ -147,7 +201,7 @@ export default function App() {
         setIsLoading(false);
 
         if (!fetchResult.success) {
-          showNotification(fetchResult.message);
+          showNotification(t[fetchResult.message === 'Kniha s tímto ISBN nebyla nalezena v dostupné databázi.' ? 'isbnNotFound' : 'isbnFetchError'] || fetchResult.message);
           return;
         }
 
@@ -158,11 +212,11 @@ export default function App() {
         };
 
         setBatchBooks((prev) => [bookToAdd, ...prev]);
-        showNotification(`Naskenováno: ${bookToAdd.title}`);
+        showNotification(`${t.scannedInBatch} ${bookToAdd.title}`);
       } catch (err) {
         setIsLoading(false);
         console.error('Error fetching book in batch:', err);
-        showNotification(`Chyba při vyhledávání ISBN ${cleanIsbn}. Zkontrolujte připojení.`);
+        showNotification(`${t.isbnFetchError} (${cleanIsbn})`);
       }
     } else {
       // Single scan mode
@@ -172,7 +226,7 @@ export default function App() {
         setIsLoading(false);
 
         if (!fetchResult.success) {
-          showNotification(fetchResult.message);
+          showNotification(t[fetchResult.message === 'Kniha s tímto ISBN nebyla nalezena v dostupné databázi.' ? 'isbnNotFound' : 'isbnFetchError'] || fetchResult.message);
           setResumeTrigger((prev) => prev + 1);
           return;
         }
@@ -187,7 +241,7 @@ export default function App() {
       } catch (err) {
         setIsLoading(false);
         console.error('Error fetching book:', err);
-        showNotification(`Chyba při vyhledávání ISBN ${cleanIsbn}. Zkontrolujte připojení.`);
+        showNotification(`${t.isbnFetchError} (${cleanIsbn})`);
         setResumeTrigger((prev) => prev + 1);
       }
     }
@@ -210,7 +264,7 @@ export default function App() {
         return [{ ...scannedBook, quantity: 1 }, ...prev];
       });
       setScannedBook(null);
-      showNotification('Kniha byla úspěšně přidána do knihovny.');
+      showNotification(t.bookAddedSuccess);
       setResumeTrigger((prev) => prev + 1);
     }
   };
@@ -235,12 +289,12 @@ export default function App() {
         );
       }
     });
-    showNotification(removeAll ? 'Kniha byla smazána z knihovny.' : 'Počet kusů byl snížen o 1.');
+    showNotification(removeAll ? t.bookDeletedSuccess : t.quantityDecreased);
   };
 
   const handleFinishBatch = () => {
     if (batchBooks.length === 0) {
-      showNotification('Zatím nebyly naskenovány žádné nové knihy.');
+      showNotification(t.noBooksInBatch);
       return;
     }
     setIsBatchReviewOpen(true);
@@ -269,7 +323,7 @@ export default function App() {
       const totalQuantity = batchBooks.reduce((acc, b) => acc + (b.quantity || 1), 0);
       setBatchBooks([]);
       setIsBatchReviewOpen(false);
-      showNotification(`Přidáno ${totalQuantity} ks knih do knihovny.`);
+      showNotification(`${formatBookCount(totalQuantity, language, t)} ${t.batchAddedSuccess}`);
       setCurrentView('library');
     }
   };
@@ -279,12 +333,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className={`min-h-screen ${activeThemeConfig.bgClass} ${activeThemeConfig.textPrimaryClass} flex flex-col font-sans transition-colors duration-200`}>
       {/* Top Banner / Toast Notification */}
       {notification && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-11/12 bg-blue-900/90 border border-blue-500 text-blue-100 px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md flex items-center justify-between text-sm font-medium animate-in fade-in slide-in-from-top-4">
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-11/12 ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md flex items-center justify-between text-sm font-medium animate-in fade-in slide-in-from-top-4`}>
           <div className="flex items-center gap-2.5">
-            <Info className="w-5 h-5 text-blue-400 flex-shrink-0" />
+            <Info className={`w-5 h-5 ${activeThemeConfig.accentClass} flex-shrink-0`} />
             <span>{notification}</span>
           </div>
         </div>
@@ -292,9 +346,9 @@ export default function App() {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-3" />
-          <p className="text-slate-200 font-medium text-sm">Vyhledávám informace o knize...</p>
+        <div className={`fixed inset-0 z-50 ${activeThemeConfig.bgClass}/80 backdrop-blur-sm flex flex-col items-center justify-center p-4`}>
+          <Loader2 className={`w-12 h-12 ${activeThemeConfig.accentClass} animate-spin mb-3`} />
+          <p className={`${activeThemeConfig.textPrimaryClass} font-medium text-sm`}>{t.loading}</p>
         </div>
       )}
 
@@ -304,7 +358,22 @@ export default function App() {
           <MainMenu
             onNavigateToScanner={() => setCurrentView('scanner')}
             onNavigateToLibrary={() => setCurrentView('library')}
+            onNavigateToSettings={() => setCurrentView('settings')}
             bookCount={books.reduce((acc, b) => acc + (b.quantity || 1), 0)}
+            t={t}
+            currentLanguage={language}
+            currentTheme={theme}
+          />
+        )}
+
+        {currentView === 'settings' && (
+          <SettingsView
+            currentLanguage={language}
+            onSelectLanguage={setLanguage}
+            currentTheme={theme}
+            onSelectTheme={setTheme}
+            onBackToMenu={() => setCurrentView('menu')}
+            t={t}
           />
         )}
 
@@ -313,12 +382,12 @@ export default function App() {
             <div className="w-full max-w-lg flex items-center justify-between mb-6">
               <button
                 onClick={() => setCurrentView('menu')}
-                className="flex items-center gap-2 text-slate-400 hover:text-slate-100 font-medium px-3 py-2 rounded-xl hover:bg-slate-900 transition"
+                className={`flex items-center gap-2 ${activeThemeConfig.textSecondaryClass} hover:${activeThemeConfig.textPrimaryClass} font-medium px-3 py-2 rounded-xl transition`}
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span>Hlavní menu</span>
+                <span>{t.mainMenu}</span>
               </button>
-              <h2 className="text-lg font-bold text-slate-200">Skener ISBN</h2>
+              <h2 className={`text-lg font-bold ${activeThemeConfig.textPrimaryClass}`}>{t.scannerTitle}</h2>
             </div>
 
             <ScannerComponent
