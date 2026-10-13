@@ -3,6 +3,9 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2 } from 'lucide-react';
 
 import type { Library } from '../types/book';
+import type { Translations, Language } from '../services/i18n';
+import type { ThemeId } from '../types/theme';
+import { themes } from '../types/theme';
 
 interface ScannerProps {
   isBatchMode: boolean;
@@ -15,6 +18,9 @@ interface ScannerProps {
   libraries: Library[];
   selectedLibraryId: string;
   onSelectLibrary: (id: string) => void;
+  t: Translations;
+  currentLanguage?: Language;
+  currentTheme?: ThemeId;
 }
 
 export const ScannerComponent: React.FC<ScannerProps> = ({
@@ -28,7 +34,10 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
   libraries,
   selectedLibraryId,
   onSelectLibrary,
+  t,
+  currentTheme = 'default',
 }) => {
+  const activeThemeConfig = themes[currentTheme] || themes.default;
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -105,7 +114,7 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
       } catch (err) {
         console.error('Failed to start scanner:', err);
         if (isMounted) {
-          setError('Nedařilo se spustit fotoaparát. Povolte prosím přístup k fotoaparátu v prohlížeči.');
+          setError(t.cameraError);
         }
       }
     };
@@ -124,20 +133,20 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
         }
       }
     };
-  }, [onScanSuccess]);
+  }, [onScanSuccess, t.cameraError]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-lg mx-auto">
       {/* Target Library Selector Dropdown */}
-      <div className="w-full mb-4 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
-        <label htmlFor="library-select" className="text-xs font-semibold text-slate-300 flex items-center gap-2">
-          <span>Pridat do knihovny:</span>
+      <div className={`w-full mb-4 ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md`}>
+        <label htmlFor="library-select" className={`text-xs font-semibold ${activeThemeConfig.textSecondaryClass} flex items-center gap-2`}>
+          <span>{t.addToLibraryLabel}</span>
         </label>
         <select
           id="library-select"
           value={selectedLibraryId}
           onChange={(e) => onSelectLibrary(e.target.value)}
-          className="w-full sm:w-auto flex-1 bg-slate-950 border border-slate-800 text-blue-400 font-semibold text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
+          className={`w-full sm:w-auto flex-1 ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.accentClass} font-semibold text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 cursor-pointer`}
         >
           {libraries.map((lib) => (
             <option key={lib.id} value={lib.id}>
@@ -148,47 +157,47 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
       </div>
 
       {/* Mode selector toggle */}
-      <div className="w-full bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex gap-1 mb-4 shadow-md">
+      <div className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} p-1.5 rounded-2xl flex gap-1 mb-4 shadow-md`}>
         <button
           onClick={() => onToggleBatchMode(false)}
           className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition ${
             !isBatchMode
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-slate-200'
+              ? `${activeThemeConfig.buttonPrimaryClass} shadow-md`
+              : `${activeThemeConfig.textSecondaryClass} hover:${activeThemeConfig.textPrimaryClass}`
           }`}
         >
           <Scan className="w-4 h-4" />
-          <span>Jednotlivé skenování</span>
+          <span>{t.singleScanning}</span>
         </button>
 
         <button
           onClick={() => onToggleBatchMode(true)}
           className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition ${
             isBatchMode
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-slate-200'
+              ? `${activeThemeConfig.buttonPrimaryClass} shadow-md`
+              : `${activeThemeConfig.textSecondaryClass} hover:${activeThemeConfig.textPrimaryClass}`
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Hromadné skenování</span>
+          <span>{t.batchScanning}</span>
         </button>
       </div>
 
       {/* Batch mode banner */}
       {isBatchMode && (
-        <div className="w-full mb-3 bg-blue-950/60 border border-blue-500/30 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs font-medium text-blue-200 animate-in fade-in">
+        <div className={`w-full mb-3 ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs font-medium ${activeThemeConfig.textPrimaryClass} animate-in fade-in`}>
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-400 animate-pulse" />
-            <span>Hromadný režim</span>
+            <Layers className={`w-4 h-4 ${activeThemeConfig.accentClass} animate-pulse`} />
+            <span>{t.batchMode}</span>
           </div>
-          <span className="bg-blue-600/30 border border-blue-400/30 text-blue-100 px-2.5 py-0.5 rounded-full font-bold">
-            {batchCount} knih
+          <span className={`bg-black/20 border ${activeThemeConfig.borderClass} ${activeThemeConfig.accentClass} px-2.5 py-0.5 rounded-full font-bold`}>
+            {batchCount} {t.bookMany}
           </span>
         </div>
       )}
 
       {/* Camera View Area */}
-      <div className="relative w-full aspect-square bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center">
+      <div className={`relative w-full aspect-square ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center`}>
         <div id={regionId} className="w-full h-full object-cover" />
 
         {/* Animated Blue Laser Scanner Line */}
@@ -201,22 +210,22 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
         )}
 
         {error && (
-          <div className="absolute inset-0 bg-slate-950/90 p-6 flex flex-col items-center justify-center text-center">
+          <div className={`absolute inset-0 ${activeThemeConfig.bgClass}/90 p-6 flex flex-col items-center justify-center text-center`}>
             <AlertCircle className="w-12 h-12 text-rose-500 mb-3" />
-            <p className="text-sm font-medium text-slate-200 mb-4">{error}</p>
+            <p className={`text-sm font-medium ${activeThemeConfig.textPrimaryClass} mb-4`}>{error}</p>
             <button
               onClick={onOpenManualEntry}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition"
+              className={`px-5 py-2.5 ${activeThemeConfig.buttonPrimaryClass} text-sm font-semibold rounded-xl transition`}
             >
-              Zadat ISBN ručně
+              {t.manualInput}
             </button>
           </div>
         )}
 
         {!isScanning && !error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-900">
-            <Camera className="w-10 h-10 animate-pulse mb-2 text-blue-500" />
-            <span className="text-xs font-medium">Spouštím skener fotoaparátu...</span>
+          <div className={`absolute inset-0 flex flex-col items-center justify-center ${activeThemeConfig.textSecondaryClass} ${activeThemeConfig.cardBgClass}`}>
+            <Camera className={`w-10 h-10 animate-pulse mb-2 ${activeThemeConfig.accentClass}`} />
+            <span className="text-xs font-medium">{t.startingCamera}</span>
           </div>
         )}
       </div>
@@ -229,16 +238,16 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
             className="flex-1 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
           >
             <CheckCircle2 className="w-5 h-5" />
-            Dokončit skenování ({batchCount})
+            {t.finishScanning} ({batchCount})
           </button>
         )}
 
         <button
           onClick={onOpenManualEntry}
-          className="flex-1 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-400 font-semibold rounded-2xl transition flex items-center justify-center gap-2 shadow-lg"
+          className={`flex-1 px-6 py-3.5 ${activeThemeConfig.buttonSecondaryClass} font-semibold rounded-2xl transition flex items-center justify-center gap-2 shadow-lg`}
         >
-          <Keyboard className="w-5 h-5" />
-          Zadat ISBN ručně
+          <Keyboard className={`w-5 h-5 ${activeThemeConfig.accentClass}`} />
+          <span>{t.manualInput}</span>
         </button>
       </div>
     </div>

@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ExportModal } from './ExportModal';
+import { translations } from '../services/i18n';
 import type { Book } from '../types/book';
 
 // Mock exportService functions
@@ -29,14 +30,14 @@ const mockBooks: Book[] = [
 describe('ExportModal', () => {
   it('does not render when isOpen is false', () => {
     const { container } = render(
-      <ExportModal isOpen={false} onClose={vi.fn()} books={mockBooks} />
+      <ExportModal isOpen={false} onClose={vi.fn()} books={mockBooks} t={translations.cs} />
     );
     expect(container.firstChild).toBeNull();
   });
 
   it('renders modal content and triggers export options when clicked', () => {
     const onClose = vi.fn();
-    render(<ExportModal isOpen={true} onClose={onClose} books={mockBooks} />);
+    render(<ExportModal isOpen={true} onClose={onClose} books={mockBooks} t={translations.cs} />);
 
     expect(screen.getByText('Exportovat knihovnu')).toBeDefined();
 

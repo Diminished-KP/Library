@@ -2,6 +2,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { LibraryView } from './LibraryView';
+import { translations } from '../services/i18n';
 import type { Book, Library } from '../types/book';
 
 const mockLibraries: Library[] = [
@@ -54,6 +55,7 @@ describe('LibraryView', () => {
         onDeleteLibrary={onDeleteLibrary}
         onBackToMenu={onBackToMenu}
         onDeleteBook={onDeleteBook}
+        t={translations.cs}
       />
     );
 
@@ -81,6 +83,7 @@ describe('LibraryView', () => {
         onDeleteLibrary={vi.fn()}
         onBackToMenu={vi.fn()}
         onDeleteBook={onDeleteBook}
+        t={translations.cs}
       />
     );
 
@@ -89,8 +92,8 @@ describe('LibraryView', () => {
     fireEvent.click(deleteButtons[0]);
 
     // Modal should appear asking whether to decrement or delete all
-    expect(screen.getByText('Odebrat knihu')).toBeDefined();
-    expect(screen.getByText(/Snížit počet o 1/i)).toBeDefined();
-    expect(screen.getByText(/Smazat všechny/i)).toBeDefined();
+    expect(screen.getByText('Odstranit knihu')).toBeDefined();
+    expect(screen.getByText(/Odebrat 1 kus/i)).toBeDefined();
+    expect(screen.getByText(/Smazat všechny kusy/i)).toBeDefined();
   });
 });

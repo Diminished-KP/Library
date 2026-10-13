@@ -68,6 +68,45 @@ export interface Translations {
   publishedYear: string;
   pages: string;
   isbn: string;
+  noCover: string;
+  pcs: string;
+  titlesCount: string;
+  emptyLibraryTitle: string;
+  emptyLibraryDesc: string;
+  noMatchingBooksFound: string;
+  deleteFromLibrary: string;
+  authorLabel: string;
+  yearLabel: string;
+  publisherLabel: string;
+  exportBooks: string;
+  goToSection: string;
+  noBooksStartingWith: string;
+
+  // Scanner extras
+  addToLibraryLabel: string;
+  singleScanning: string;
+  batchScanning: string;
+  startingCamera: string;
+  cameraError: string;
+  finishScanning: string;
+
+  // Modal extras
+  targetLibraryLabel: string;
+  addToLibraryButton: string;
+  discardButton: string;
+  batchReviewSub: string;
+  chooseExportFormat: string;
+  copyToClipboard: string;
+  downloadFile: string;
+  copiedToClipboard: string;
+  deleteBookQuantityMessage: string;
+  deleteBookActionPrompt: string;
+  exportPdf: string;
+  exportPdfDesc: string;
+  exportExcel: string;
+  exportExcelDesc: string;
+  exportCsv: string;
+  exportCsvDesc: string;
 
   // Notifications & Messages
   bookAddedSuccess: string;
@@ -163,6 +202,43 @@ export const translations: Record<Language, Translations> = {
     publishedYear: 'Rok vydání',
     pages: 'Počet stran',
     isbn: 'ISBN',
+    noCover: 'Bez obálky',
+    pcs: 'ks',
+    titlesCount: 'titulů',
+    emptyLibraryTitle: 'Knihovna je prázdná',
+    emptyLibraryDesc: 'V této knihovně zatím nejsou žádné knihy. Naskenujte čárový kód nebo zadejte ISBN v aplikaci.',
+    noMatchingBooksFound: 'Nenalezeny žádné knihy odpovídající',
+    deleteFromLibrary: 'Smazat z knihovny',
+    authorLabel: 'Autor:',
+    yearLabel: 'Rok:',
+    publisherLabel: 'Nakladatelství:',
+    exportBooks: 'Exportovat',
+    goToSection: 'Přejít na',
+    noBooksStartingWith: 'Žádné knihy od',
+
+    addToLibraryLabel: 'Přidat do knihovny:',
+    singleScanning: 'Jednotlivé skenování',
+    batchScanning: 'Hromadné skenování',
+    startingCamera: 'Spouštím skener fotoaparátu...',
+    cameraError: 'Nedařilo se spustit fotoaparát. Povolte prosím přístup k fotoaparátu v prohlížeči.',
+    finishScanning: 'Dokončit skenování',
+
+    targetLibraryLabel: 'Knihovna:',
+    addToLibraryButton: 'Přidat do knihovny',
+    discardButton: 'Zahodit',
+    batchReviewSub: 'Naskenované knihy k uložení',
+    chooseExportFormat: 'Vyberte formát pro export:',
+    copyToClipboard: 'Kopírovat do schránky',
+    downloadFile: 'Stáhnout soubor',
+    copiedToClipboard: 'Kopírováno do schránky!',
+    deleteBookQuantityMessage: 'V knihovně se nachází',
+    deleteBookActionPrompt: 'Co si přejete udělat?',
+    exportPdf: 'PDF Dokument',
+    exportPdfDesc: 'Přehledný dokument vhodný pro tisk',
+    exportExcel: 'Excel (.xlsx)',
+    exportExcelDesc: 'Tabulkový soubor s formátováním',
+    exportCsv: 'CSV / Google Sheets',
+    exportCsvDesc: 'Univerzální textový formát (UTF-8)',
 
     bookAddedSuccess: 'Kniha byla úspěšně přidána do knihovny.',
     bookDeletedSuccess: 'Kniha byla smazána z knihovny.',
@@ -255,6 +331,43 @@ export const translations: Record<Language, Translations> = {
     publishedYear: 'Publication Year',
     pages: 'Pages',
     isbn: 'ISBN',
+    noCover: 'No cover',
+    pcs: 'pcs',
+    titlesCount: 'titles',
+    emptyLibraryTitle: 'Library is empty',
+    emptyLibraryDesc: 'There are no books in this library yet. Scan a barcode or enter an ISBN in the app.',
+    noMatchingBooksFound: 'No books found matching',
+    deleteFromLibrary: 'Delete from library',
+    authorLabel: 'Author:',
+    yearLabel: 'Year:',
+    publisherLabel: 'Publisher:',
+    exportBooks: 'Export',
+    goToSection: 'Go to',
+    noBooksStartingWith: 'No books starting with',
+
+    addToLibraryLabel: 'Add to library:',
+    singleScanning: 'Single Scanning',
+    batchScanning: 'Batch Scanning',
+    startingCamera: 'Starting camera scanner...',
+    cameraError: 'Failed to start camera. Please grant camera access in your browser.',
+    finishScanning: 'Finish scanning',
+
+    targetLibraryLabel: 'Library:',
+    addToLibraryButton: 'Add to Library',
+    discardButton: 'Discard',
+    batchReviewSub: 'Scanned books to save',
+    chooseExportFormat: 'Choose export format:',
+    copyToClipboard: 'Copy to clipboard',
+    downloadFile: 'Download file',
+    copiedToClipboard: 'Copied to clipboard!',
+    deleteBookQuantityMessage: 'There are',
+    deleteBookActionPrompt: 'What would you like to do?',
+    exportPdf: 'PDF Document',
+    exportPdfDesc: 'Print-friendly PDF',
+    exportExcel: 'Excel (.xlsx)',
+    exportExcelDesc: 'Spreadsheet with formatting',
+    exportCsv: 'CSV / Google Sheets',
+    exportCsvDesc: 'Plain text format (UTF-8)',
 
     bookAddedSuccess: 'Book was successfully added to the library.',
     bookDeletedSuccess: 'Book was deleted from the library.',
@@ -347,6 +460,43 @@ export const translations: Record<Language, Translations> = {
     publishedYear: 'Año de publicación',
     pages: 'Páginas',
     isbn: 'ISBN',
+    noCover: 'Sin portada',
+    pcs: 'uds',
+    titlesCount: 'títulos',
+    emptyLibraryTitle: 'La biblioteca está vacía',
+    emptyLibraryDesc: 'Aún no hay libros en esta biblioteca. Escanea un código de barras o ingresa un ISBN.',
+    noMatchingBooksFound: 'No se encontraron libros que coincidan con',
+    deleteFromLibrary: 'Eliminar de la biblioteca',
+    authorLabel: 'Autor:',
+    yearLabel: 'Año:',
+    publisherLabel: 'Editorial:',
+    exportBooks: 'Exportar',
+    goToSection: 'Ir a',
+    noBooksStartingWith: 'Sin libros con la letra',
+
+    addToLibraryLabel: 'Añadir a la biblioteca:',
+    singleScanning: 'Escaneo individual',
+    batchScanning: 'Escaneo por lotes',
+    startingCamera: 'Iniciando escáner de cámara...',
+    cameraError: 'Error al iniciar la cámara. Permite el acceso a la cámara en tu navegador.',
+    finishScanning: 'Finalizar escaneo',
+
+    targetLibraryLabel: 'Biblioteca:',
+    addToLibraryButton: 'Añadir a la biblioteca',
+    discardButton: 'Descartar',
+    batchReviewSub: 'Libros escaneados para guardar',
+    chooseExportFormat: 'Elige el formato de exportación:',
+    copyToClipboard: 'Copiar al portapapeles',
+    downloadFile: 'Descargar archivo',
+    copiedToClipboard: '¡Copiado al portapapeles!',
+    deleteBookQuantityMessage: 'En la biblioteca hay',
+    deleteBookActionPrompt: '¿Qué deseas hacer?',
+    exportPdf: 'Documento PDF',
+    exportPdfDesc: 'Documento listo para imprimir',
+    exportExcel: 'Excel (.xlsx)',
+    exportExcelDesc: 'Hoja de cálculo con formato',
+    exportCsv: 'CSV / Google Sheets',
+    exportCsvDesc: 'Formato de texto plano (UTF-8)',
 
     bookAddedSuccess: 'El libro fue añadido con éxito a la biblioteca.',
     bookDeletedSuccess: 'El libro fue eliminado de la biblioteca.',
