@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats, Html5QrcodeScannerState } from 'html5-qrcode';
 import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2 } from 'lucide-react';
 
 import type { Library } from '../types/book';
@@ -52,9 +52,11 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
 
   // Handle resume if scanner was paused in single mode
   useEffect(() => {
-    if (scannerRef.current && scannerRef.current.getState() === 3 /* PAUSED */) {
+    if (scannerRef.current) {
       try {
-        scannerRef.current.resume();
+        if (scannerRef.current.getState() === Html5QrcodeScannerState.PAUSED) {
+          scannerRef.current.resume();
+        }
       } catch (e) {
         console.error('Error resuming scanner:', e);
       }
@@ -63,6 +65,24 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
 
   useEffect(() => {
     let isMounted = true;
+
+    const stopAndClearScanner = async (scanner: Html5Qrcode | null) => {
+      if (!scanner) return;
+      try {
+        const state = scanner.getState();
+        if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+          await scanner.stop();
+        }
+      } catch (err) {
+        console.error('Error stopping scanner:', err);
+      } finally {
+        try {
+          scanner.clear();
+        } catch (clearErr) {
+          console.error('Error clearing scanner:', clearErr);
+        }
+      }
+    };
 
     const startScanner = async () => {
       try {
@@ -99,7 +119,13 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
               lastScanTimeRef.current = now;
               onScanSuccess(decodedText);
             } else {
-              html5Qrcode.pause(true);
+              try {
+                if (html5Qrcode.getState() === Html5QrcodeScannerState.SCANNING) {
+                  html5Qrcode.pause(true);
+                }
+              } catch (e) {
+                console.error('Error pausing scanner:', e);
+              }
               onScanSuccess(decodedText);
             }
           },
@@ -108,9 +134,12 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
           }
         );
 
-        if (isMounted) {
-          setIsScanning(true);
+        if (!isMounted) {
+          await stopAndClearScanner(html5Qrcode);
+          return;
         }
+
+        setIsScanning(true);
       } catch (err) {
         console.error('Failed to start scanner:', err);
         if (isMounted) {
@@ -123,14 +152,10 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
 
     return () => {
       isMounted = false;
-      if (scannerRef.current) {
-        if (scannerRef.current.isScanning) {
-          scannerRef.current.stop().then(() => {
-            scannerRef.current?.clear();
-          }).catch(err => console.error('Error stopping scanner:', err));
-        } else {
-          scannerRef.current.clear();
-        }
+      const scanner = scannerRef.current;
+      scannerRef.current = null;
+      if (scanner) {
+        stopAndClearScanner(scanner);
       }
     };
   }, [onScanSuccess, t.cameraError]);
