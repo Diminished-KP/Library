@@ -43,6 +43,7 @@ describe('LibraryView', () => {
     const onOpenAddLibraryModal = vi.fn();
     const onDeleteLibrary = vi.fn();
     const onBackToMenu = vi.fn();
+    const onNavigateToScanner = vi.fn();
     const onDeleteBook = vi.fn();
 
     render(
@@ -54,6 +55,7 @@ describe('LibraryView', () => {
         onOpenAddLibraryModal={onOpenAddLibraryModal}
         onDeleteLibrary={onDeleteLibrary}
         onBackToMenu={onBackToMenu}
+        onNavigateToScanner={onNavigateToScanner}
         onDeleteBook={onDeleteBook}
         t={translations.cs}
       />
@@ -70,6 +72,57 @@ describe('LibraryView', () => {
     expect(screen.getAllByText('#').length).toBeGreaterThan(0);
   });
 
+  it('filters books by genre and author', () => {
+    const booksWithGenre: Book[] = [
+      {
+        isbn: '111',
+        title: 'Duna',
+        authors: 'Frank Herbert',
+        genre: 'Sci-Fi',
+        libraryId: 'lib1',
+        quantity: 1,
+        addedAt: 1,
+      },
+      {
+        isbn: '222',
+        title: 'Sherlock Holmes',
+        authors: 'Arthur Conan Doyle',
+        genre: 'Detektivka',
+        libraryId: 'lib1',
+        quantity: 1,
+        addedAt: 2,
+      },
+    ];
+
+    render(
+      <LibraryView
+        books={booksWithGenre}
+        libraries={mockLibraries}
+        activeLibraryId="lib1"
+        onSelectLibrary={vi.fn()}
+        onOpenAddLibraryModal={vi.fn()}
+        onDeleteLibrary={vi.fn()}
+        onBackToMenu={vi.fn()}
+        onNavigateToScanner={vi.fn()}
+        onDeleteBook={vi.fn()}
+        t={translations.cs}
+      />
+    );
+
+    expect(screen.getByText('Duna')).toBeDefined();
+    expect(screen.getByText('Sherlock Holmes')).toBeDefined();
+
+    // Filter by genre 'Sci-Fi'
+    const selects = screen.getAllByRole('combobox');
+    const genreSelect = selects.find((s) =>
+      Array.from(s.querySelectorAll('option')).some((opt) => opt.value === 'Sci-Fi')
+    )!;
+    fireEvent.change(genreSelect, { target: { value: 'Sci-Fi' } });
+
+    expect(screen.getByText('Duna')).toBeDefined();
+    expect(screen.queryByText('Sherlock Holmes')).toBeNull();
+  });
+
   it('opens DeleteBookModal when deleting a book with quantity > 1', () => {
     const onDeleteBook = vi.fn();
 
@@ -82,17 +135,20 @@ describe('LibraryView', () => {
         onOpenAddLibraryModal={vi.fn()}
         onDeleteLibrary={vi.fn()}
         onBackToMenu={vi.fn()}
+        onNavigateToScanner={vi.fn()}
         onDeleteBook={onDeleteBook}
         t={translations.cs}
       />
     );
 
-    // Click delete on Babička (quantity: 2)
-    const deleteButtons = screen.getAllByTitle('Smazat z knihovny');
-    fireEvent.click(deleteButtons[0]);
+    // Babička has quantity 2, find delete button for Babička
+    const babickaHeadings = screen.getAllByText('Babička');
+    const babickaCard = babickaHeadings[0].closest('.group')!;
+    const deleteButton = babickaCard.querySelector('button[title="Smazat z knihovny"]')!;
+    fireEvent.click(deleteButton);
 
     // Modal should appear asking whether to decrement or delete all
-    expect(screen.getByText('Odstranit knihu')).toBeDefined();
+    expect(screen.getAllByText('Odstranit knihu').length).toBeGreaterThan(0);
     expect(screen.getByText(/Odebrat 1 kus/i)).toBeDefined();
     expect(screen.getByText(/Smazat všechny kusy/i)).toBeDefined();
   });

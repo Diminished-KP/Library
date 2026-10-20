@@ -8,7 +8,9 @@ import { fetchBookByIsbnDetailed, normalizeIsbn } from './services/bookService';
 import { MainMenu } from './components/MainMenu';
 import { SettingsView } from './components/SettingsView';
 import { ScannerComponent } from './components/Scanner';
+import type { ReadingStatus } from './types/book';
 import { ManualEntryModal } from './components/ManualEntryModal';
+import { ManualEntryWithoutIsbnModal } from './components/ManualEntryWithoutIsbnModal';
 import { BookPreviewModal } from './components/BookPreviewModal';
 import { BatchReviewModal } from './components/BatchReviewModal';
 import { LibraryView } from './components/LibraryView';
@@ -81,10 +83,12 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY_BOOKS);
       if (saved) {
         const parsed: Book[] = JSON.parse(saved);
-        return parsed.map((b) => ({
+        return parsed.map((b, idx) => ({
           ...b,
+          id: b.id || `book_legacy_${idx}_${b.isbn}`,
           libraryId: b.libraryId || 'default',
           quantity: typeof b.quantity === 'number' ? b.quantity : 1,
+          readingStatus: b.readingStatus || 'unread',
         }));
       }
       return [];
@@ -98,6 +102,7 @@ export default function App() {
   const [isBatchReviewOpen, setIsBatchReviewOpen] = useState(false);
 
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isManualNoIsbnModalOpen, setIsManualNoIsbnModalOpen] = useState(false);
   const [isAddLibraryModalOpen, setIsAddLibraryModalOpen] = useState(false);
   const [scannedBook, setScannedBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -255,7 +260,7 @@ export default function App() {
     if (scannedBook) {
       setBooks((prev) => {
         const existingIdx = prev.findIndex(
-          (b) => b.isbn === scannedBook.isbn && b.libraryId === scannedBook.libraryId
+          (b) => b.isbn === scannedBook.isbn && b.isbn.trim() !== '' && !b.isbn.startsWith('NO_ISBN_') && b.libraryId === scannedBook.libraryId
         );
         if (existingIdx >= 0) {
           const updated = [...prev];
@@ -271,6 +276,39 @@ export default function App() {
       showNotification(t.bookAddedSuccess);
       setResumeTrigger((prev) => prev + 1);
     }
+  };
+
+  const handleAddCustomBook = (newBook: Book) => {
+    setBooks((prev) => [newBook, ...prev]);
+    showNotification(t.bookAddedSuccess);
+  };
+
+  const handleUpdateBook = (updatedBook: Book) => {
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id && updatedBook.id && b.id === updatedBook.id) {
+          return updatedBook;
+        }
+        if (b.isbn === updatedBook.isbn && b.libraryId === updatedBook.libraryId) {
+          return updatedBook;
+        }
+        return b;
+      })
+    );
+  };
+
+  const handleUpdateReadingStatus = (targetBook: Book, status: ReadingStatus) => {
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id && targetBook.id && b.id === targetBook.id) {
+          return { ...b, readingStatus: status };
+        }
+        if (b.isbn === targetBook.isbn && b.libraryId === targetBook.libraryId) {
+          return { ...b, readingStatus: status };
+        }
+        return b;
+      })
+    );
   };
 
   const handleDiscardBook = () => {
@@ -400,6 +438,7 @@ export default function App() {
               batchCount={batchBooks.reduce((acc, b) => acc + (b.quantity || 1), 0)}
               onScanSuccess={(isbn) => handleIsbnProcess(isbn)}
               onOpenManualEntry={() => setIsManualModalOpen(true)}
+              onOpenManualEntryNoIsbn={() => setIsManualNoIsbnModalOpen(true)}
               onFinishBatch={handleFinishBatch}
               resumeTrigger={resumeTrigger}
               libraries={libraries}
@@ -421,7 +460,10 @@ export default function App() {
             onOpenAddLibraryModal={() => setIsAddLibraryModalOpen(true)}
             onDeleteLibrary={handleDeleteLibrary}
             onBackToMenu={() => setCurrentView('menu')}
+            onNavigateToScanner={() => setCurrentView('scanner')}
             onDeleteBook={handleDeleteBook}
+            onUpdateBook={handleUpdateBook}
+            onUpdateReadingStatus={handleUpdateReadingStatus}
             t={t}
             currentLanguage={language}
             currentTheme={theme}
@@ -437,6 +479,18 @@ export default function App() {
           setIsManualModalOpen(false);
           handleIsbnProcess(isbn);
         }}
+        libraries={libraries}
+        selectedLibraryId={activeLibraryId}
+        onSelectLibrary={setActiveLibraryId}
+        t={t}
+        currentTheme={theme}
+      />
+
+      {/* Manual Entry Without ISBN Modal */}
+      <ManualEntryWithoutIsbnModal
+        isOpen={isManualNoIsbnModalOpen}
+        onClose={() => setIsManualNoIsbnModalOpen(false)}
+        onSubmit={handleAddCustomBook}
         libraries={libraries}
         selectedLibraryId={activeLibraryId}
         onSelectLibrary={setActiveLibraryId}

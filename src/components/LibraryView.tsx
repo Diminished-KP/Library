@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import type { Book, Library } from '../types/book';
+import type { Book, Library, ReadingStatus } from '../types/book';
 import type { Translations, Language } from '../services/i18n';
 import type { ThemeId } from '../types/theme';
 import { themes } from '../types/theme';
 import { DeleteBookModal } from './DeleteBookModal';
 import { ExportModal } from './ExportModal';
+import { BookDetailModal } from './BookDetailModal';
 import {
   ArrowLeft,
   Trash2,
@@ -13,6 +14,10 @@ import {
   BookOpen,
   Download,
   Plus,
+  Scan,
+  CheckCircle2,
+  Clock,
+  Filter,
 } from 'lucide-react';
 
 interface LibraryViewProps {
@@ -23,7 +28,10 @@ interface LibraryViewProps {
   onOpenAddLibraryModal: () => void;
   onDeleteLibrary: (id: string) => void;
   onBackToMenu: () => void;
+  onNavigateToScanner: () => void;
   onDeleteBook: (isbn: string, libraryId: string, removeAll: boolean) => void;
+  onUpdateBook?: (updatedBook: Book) => void;
+  onUpdateReadingStatus?: (book: Book, status: ReadingStatus) => void;
   t: Translations;
   currentLanguage?: Language;
   currentTheme?: ThemeId;
@@ -64,13 +72,21 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onOpenAddLibraryModal,
   onDeleteLibrary,
   onBackToMenu,
+  onNavigateToScanner,
   onDeleteBook,
+  onUpdateBook,
+  onUpdateReadingStatus,
   t,
   currentLanguage = 'cs',
   currentTheme = 'default',
 }) => {
   const activeThemeConfig = themes[currentTheme] || themes.default;
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
+  const [selectedBookForDetail, setSelectedBookForDetail] = useState<Book | null>(null);
   const [deletingBook, setDeletingBook] = useState<Book | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -81,14 +97,55 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     return books.filter((b) => b.libraryId === activeLibraryId);
   }, [books, activeLibraryId]);
 
+  // Unique genres for filter
+  const availableGenres = useMemo(() => {
+    const set = new Set<string>();
+    libraryBooks.forEach((b) => {
+      if (b.genre) {
+        b.genre.split(',').forEach((g) => {
+          const trimmed = g.trim();
+          if (trimmed) set.add(trimmed);
+        });
+      }
+    });
+    return Array.from(set).sort();
+  }, [libraryBooks]);
+
+  // Unique authors for filter
+  const availableAuthors = useMemo(() => {
+    const set = new Set<string>();
+    libraryBooks.forEach((b) => {
+      if (b.authors) {
+        b.authors.split(',').forEach((a) => {
+          const trimmed = a.trim();
+          if (trimmed) set.add(trimmed);
+        });
+      }
+    });
+    return Array.from(set).sort();
+  }, [libraryBooks]);
+
   const filteredBooks = useMemo(() => {
-    return libraryBooks.filter(
-      (b) =>
+    return libraryBooks.filter((b) => {
+      const matchesSearch =
         b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (b.authors && b.authors.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        b.isbn.includes(searchTerm)
-    );
-  }, [libraryBooks, searchTerm]);
+        b.isbn.includes(searchTerm);
+
+      const matchesGenre =
+        selectedGenre === 'all' ||
+        (b.genre && b.genre.toLowerCase().includes(selectedGenre.toLowerCase()));
+
+      const matchesAuthor =
+        selectedAuthor === 'all' ||
+        (b.authors && b.authors.toLowerCase().includes(selectedAuthor.toLowerCase()));
+
+      const status = b.readingStatus || 'unread';
+      const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
+
+      return matchesSearch && matchesGenre && matchesAuthor && matchesStatus;
+    });
+  }, [libraryBooks, searchTerm, selectedGenre, selectedAuthor, selectedStatus]);
 
   // Alphabet sidebar letters
   const alphabetLetters = useMemo(() => {
@@ -157,8 +214,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
         <div className="flex items-center gap-3">
           <button
-            onClick={onOpenAddLibraryModal}
+            onClick={onNavigateToScanner}
             className={`px-4 py-2 ${activeThemeConfig.buttonPrimaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-2 shadow-lg`}
+          >
+            <Scan className="w-4 h-4" />
+            <span>{t.addBooksToLibrary}</span>
+          </button>
+          <button
+            onClick={onOpenAddLibraryModal}
+            className={`px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-2 shadow-md`}
           >
             <Plus className="w-4 h-4" />
             <span>{t.addLibrary}</span>
@@ -230,7 +294,56 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          {/* Filters Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="relative">
+              <Filter className={`w-4 h-4 ${activeThemeConfig.textSecondaryClass} absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none`} />
+              <select
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+                className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+              >
+                <option value="all">{t.allGenres}</option>
+                {availableGenres.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative">
+              <Filter className={`w-4 h-4 ${activeThemeConfig.textSecondaryClass} absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none`} />
+              <select
+                value={selectedAuthor}
+                onChange={(e) => setSelectedAuthor(e.target.value)}
+                className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+              >
+                <option value="all">{t.allAuthors}</option>
+                {availableAuthors.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative">
+              <Filter className={`w-4 h-4 ${activeThemeConfig.textSecondaryClass} absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none`} />
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+              >
+                <option value="all">Všechny stavy čtení</option>
+                <option value="unread">{t.statusUnread}</option>
+                <option value="reading">{t.statusReading}</option>
+                <option value="read">{t.statusRead}</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <button
               onClick={() => setIsExportModalOpen(true)}
               className={`px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} text-xs font-semibold rounded-xl transition flex items-center gap-2 shadow-md`}
@@ -273,19 +386,34 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   <div className="space-y-3">
                     {booksInLetter.map((book) => (
                       <div
-                        key={book.isbn}
-                        className={`${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-2xl p-4 sm:p-5 flex items-start justify-between gap-4 transition shadow-md`}
+                        key={book.id || `${book.isbn}_${book.addedAt}`}
+                        onClick={() => setSelectedBookForDetail(book)}
+                        className={`${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} hover:border-blue-500/50 cursor-pointer rounded-2xl p-4 sm:p-5 flex items-start justify-between gap-4 transition shadow-md group`}
                       >
                         <BookCover coverUrl={book.coverUrl} title={book.title} noCoverText={t.noCover} activeThemeConfig={activeThemeConfig} />
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <h3 className={`text-base sm:text-lg font-bold ${activeThemeConfig.textPrimaryClass} leading-snug break-words`}>
+                            <h3 className={`text-base sm:text-lg font-bold ${activeThemeConfig.textPrimaryClass} leading-snug break-words group-hover:text-blue-400 transition`}>
                               {book.title}
                             </h3>
-                            <span className={`bg-black/20 border ${activeThemeConfig.borderClass} ${activeThemeConfig.accentClass} text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0`}>
-                              {book.quantity || 1} {t.pcs}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              {book.readingStatus === 'reading' && (
+                                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{t.statusReading}</span>
+                                </span>
+                              )}
+                              {book.readingStatus === 'read' && (
+                                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>{t.statusRead}</span>
+                                </span>
+                              )}
+                              <span className={`bg-black/20 border ${activeThemeConfig.borderClass} ${activeThemeConfig.accentClass} text-xs font-bold px-2.5 py-0.5 rounded-full`}>
+                                {book.quantity || 1} {t.pcs}
+                              </span>
+                            </div>
                           </div>
 
                           <div className={`text-xs ${activeThemeConfig.textSecondaryClass} space-y-1 font-medium`}>
@@ -294,16 +422,24 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                                 <strong>{t.authorLabel}</strong> {book.authors}
                               </p>
                             )}
+                            {book.genre && (
+                              <p className={activeThemeConfig.accentClass}>
+                                <strong>{t.genreLabel}</strong> {book.genre}
+                              </p>
+                            )}
                             <div className={`flex flex-wrap gap-x-4 gap-y-1 ${activeThemeConfig.textSecondaryClass}`}>
                               {book.publishedYear && <p>{t.yearLabel} {book.publishedYear}</p>}
                               {book.publisher && <p>{t.publisherLabel} {book.publisher}</p>}
-                              <p className="font-mono opacity-80">{t.isbn}: {book.isbn}</p>
+                              {book.isbn && <p className="font-mono opacity-80">{t.isbn}: {book.isbn}</p>}
                             </div>
                           </div>
                         </div>
 
                         <button
-                          onClick={() => handleBookDeleteClick(book)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookDeleteClick(book);
+                          }}
                           title={t.deleteFromLibrary}
                           className={`${activeThemeConfig.textSecondaryClass} hover:text-rose-400 p-2 hover:bg-black/10 rounded-xl transition flex-shrink-0`}
                         >
@@ -349,6 +485,33 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         t={t}
         currentTheme={currentTheme}
       />
+
+      {/* Detail Modal */}
+      {selectedBookForDetail && (
+        <BookDetailModal
+          book={selectedBookForDetail}
+          isOpen={!!selectedBookForDetail}
+          onClose={() => setSelectedBookForDetail(null)}
+          onUpdateReadingStatus={(book, status) => {
+            if (onUpdateReadingStatus) {
+              onUpdateReadingStatus(book, status);
+            }
+            setSelectedBookForDetail((prev) => (prev ? { ...prev, readingStatus: status } : null));
+          }}
+          onUpdateBook={(updatedBook) => {
+            if (onUpdateBook) {
+              onUpdateBook(updatedBook);
+            }
+            setSelectedBookForDetail(updatedBook);
+          }}
+          onDeleteBook={(book) => {
+            handleBookDeleteClick(book);
+            setSelectedBookForDetail(null);
+          }}
+          t={t}
+          currentTheme={currentTheme}
+        />
+      )}
 
       {/* Delete Book Modal */}
       {deletingBook && (

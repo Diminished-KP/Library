@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats, Html5QrcodeScannerState } from 'html5-qrcode';
-import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2 } from 'lucide-react';
+import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2, BookPlus } from 'lucide-react';
 
 import type { Library } from '../types/book';
 import type { Translations, Language } from '../services/i18n';
@@ -13,6 +13,7 @@ interface ScannerProps {
   batchCount: number;
   onScanSuccess: (decodedText: string) => void;
   onOpenManualEntry: () => void;
+  onOpenManualEntryNoIsbn?: () => void;
   onFinishBatch: () => void;
   resumeTrigger?: number;
   libraries: Library[];
@@ -29,6 +30,7 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
   batchCount,
   onScanSuccess,
   onOpenManualEntry,
+  onOpenManualEntryNoIsbn,
   onFinishBatch,
   resumeTrigger,
   libraries,
@@ -267,13 +269,25 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
           </button>
         )}
 
-        <button
-          onClick={onOpenManualEntry}
-          className={`flex-1 px-6 py-3.5 ${activeThemeConfig.buttonSecondaryClass} font-semibold rounded-2xl transition flex items-center justify-center gap-2 shadow-lg`}
-        >
-          <Keyboard className={`w-5 h-5 ${activeThemeConfig.accentClass}`} />
-          <span>{t.manualInput}</span>
-        </button>
+        <div className="flex-1 flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={onOpenManualEntry}
+            className={`flex-1 px-4 py-3.5 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs sm:text-sm rounded-2xl transition flex items-center justify-center gap-2 shadow-lg`}
+          >
+            <Keyboard className={`w-4 h-4 ${activeThemeConfig.accentClass}`} />
+            <span>{t.manualInput}</span>
+          </button>
+
+          {onOpenManualEntryNoIsbn && (
+            <button
+              onClick={onOpenManualEntryNoIsbn}
+              className={`flex-1 px-4 py-3.5 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs sm:text-sm rounded-2xl transition flex items-center justify-center gap-2 shadow-lg`}
+            >
+              <BookPlus className={`w-4 h-4 ${activeThemeConfig.accentClass}`} />
+              <span>{t.manualInputNoIsbn}</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

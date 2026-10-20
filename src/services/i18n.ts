@@ -48,12 +48,24 @@ export interface Translations {
   batchMode: string;
   singleMode: string;
   manualInput: string;
+  manualInputNoIsbn: string;
   finishBatch: string;
   scannedBooksCount: string;
   selectLibrary: string;
 
+  // Reading status & Genre
+  statusUnread: string;
+  statusReading: string;
+  statusRead: string;
+  genreLabel: string;
+  filterByGenre: string;
+  filterByAuthor: string;
+  allGenres: string;
+  allAuthors: string;
+
   // Library view
   libraryTitle: string;
+  addBooksToLibrary: string;
   addLibrary: string;
   deleteLibrary: string;
   exportLibrary: string;
@@ -129,9 +141,17 @@ export interface Translations {
   saveAll: string;
   discardAll: string;
   manualEntryTitle: string;
+  manualEntryNoIsbnTitle: string;
   manualEntryPlaceholder: string;
   manualEntrySubmit: string;
   addLibraryTitle: string;
+  bookTitleLabel: string;
+  bookAuthorLabel: string;
+  bookGenreLabel: string;
+  bookYearLabel: string;
+  bookPublisherLabel: string;
+  bookIsbnOptionalLabel: string;
+  addCustomBookSubmit: string;
   libraryNameLabel: string;
   libraryDescLabel: string;
   deleteBookTitle: string;
@@ -183,11 +203,22 @@ export const translations: Record<Language, Translations> = {
     batchMode: 'Hromadný režim',
     singleMode: 'Jednotlivý režim',
     manualInput: 'Ruční zadání ISBN',
+    manualInputNoIsbn: 'Zadat knihu ručně (bez ISBN)',
     finishBatch: 'Dokončit hromadný sběr',
     scannedBooksCount: 'Naskenované knihy',
     selectLibrary: 'Vyberte knihovnu',
 
+    statusUnread: 'Nepřečteno',
+    statusReading: 'Právě čtu',
+    statusRead: 'Přečteno',
+    genreLabel: 'Žánr:',
+    filterByGenre: 'Filtr žánru',
+    filterByAuthor: 'Filtr autora',
+    allGenres: 'Všechny žánry',
+    allAuthors: 'Všichni autoři',
+
     libraryTitle: 'Moje Knihovna',
+    addBooksToLibrary: 'Přidat knihy',
     addLibrary: 'Přidat knihovnu',
     deleteLibrary: 'Smazat knihovnu',
     exportLibrary: 'Exportovat knihovnu',
@@ -259,9 +290,17 @@ export const translations: Record<Language, Translations> = {
     saveAll: 'Uložit vše do knihovny',
     discardAll: 'Zahodit vše',
     manualEntryTitle: 'Zadat ISBN ručně',
+    manualEntryNoIsbnTitle: 'Přidat knihu ručně bez ISBN',
     manualEntryPlaceholder: 'Zadejte 10 nebo 13-místné ISBN',
     manualEntrySubmit: 'Vyhledat knihu',
     addLibraryTitle: 'Vytvořit novou knihovnu',
+    bookTitleLabel: 'Název knihy *',
+    bookAuthorLabel: 'Autor *',
+    bookGenreLabel: 'Žánr',
+    bookYearLabel: 'Rok vydání',
+    bookPublisherLabel: 'Nakladatelství',
+    bookIsbnOptionalLabel: 'ISBN (volitelné)',
+    addCustomBookSubmit: 'Přidat knihu do knihovny',
     libraryNameLabel: 'Název knihovny',
     libraryDescLabel: 'Popis (volitelné)',
     deleteBookTitle: 'Odstranit knihu',
@@ -312,11 +351,22 @@ export const translations: Record<Language, Translations> = {
     batchMode: 'Batch Mode',
     singleMode: 'Single Mode',
     manualInput: 'Manual ISBN Entry',
+    manualInputNoIsbn: 'Add Book Manually (Without ISBN)',
     finishBatch: 'Finish Batch',
     scannedBooksCount: 'Scanned books',
     selectLibrary: 'Select library',
 
+    statusUnread: 'Unread',
+    statusReading: 'Currently Reading',
+    statusRead: 'Read',
+    genreLabel: 'Genre:',
+    filterByGenre: 'Filter Genre',
+    filterByAuthor: 'Filter Author',
+    allGenres: 'All Genres',
+    allAuthors: 'All Authors',
+
     libraryTitle: 'My Library',
+    addBooksToLibrary: 'Add Books',
     addLibrary: 'Add Library',
     deleteLibrary: 'Delete Library',
     exportLibrary: 'Export Library',
@@ -388,9 +438,17 @@ export const translations: Record<Language, Translations> = {
     saveAll: 'Save All to Library',
     discardAll: 'Discard All',
     manualEntryTitle: 'Enter ISBN Manually',
+    manualEntryNoIsbnTitle: 'Add Book Manually Without ISBN',
     manualEntryPlaceholder: 'Enter 10 or 13 digit ISBN',
     manualEntrySubmit: 'Search Book',
     addLibraryTitle: 'Create New Library',
+    bookTitleLabel: 'Book Title *',
+    bookAuthorLabel: 'Author *',
+    bookGenreLabel: 'Genre',
+    bookYearLabel: 'Published Year',
+    bookPublisherLabel: 'Publisher',
+    bookIsbnOptionalLabel: 'ISBN (optional)',
+    addCustomBookSubmit: 'Add Book to Library',
     libraryNameLabel: 'Library Name',
     libraryDescLabel: 'Description (optional)',
     deleteBookTitle: 'Remove Book',
@@ -441,11 +499,22 @@ export const translations: Record<Language, Translations> = {
     batchMode: 'Modo por lotes',
     singleMode: 'Modo individual',
     manualInput: 'Entrada manual de ISBN',
+    manualInputNoIsbn: 'Añadir libro manualmente (Sin ISBN)',
     finishBatch: 'Finalizar lote',
     scannedBooksCount: 'Libros escaneados',
     selectLibrary: 'Seleccionar biblioteca',
 
+    statusUnread: 'No leído',
+    statusReading: 'Leyendo',
+    statusRead: 'Leído',
+    genreLabel: 'Género:',
+    filterByGenre: 'Filtrar por género',
+    filterByAuthor: 'Filtrar por autor',
+    allGenres: 'Todos los géneros',
+    allAuthors: 'Todos los autores',
+
     libraryTitle: 'Mi Biblioteca',
+    addBooksToLibrary: 'Añadir libros',
     addLibrary: 'Añadir biblioteca',
     deleteLibrary: 'Eliminar biblioteca',
     exportLibrary: 'Exportar biblioteca',
@@ -517,9 +586,17 @@ export const translations: Record<Language, Translations> = {
     saveAll: 'Guardar todo en la biblioteca',
     discardAll: 'Descartar todo',
     manualEntryTitle: 'Ingresar ISBN manualmente',
+    manualEntryNoIsbnTitle: 'Añadir libro manualmente sin ISBN',
     manualEntryPlaceholder: 'Ingresa un ISBN de 10 o 13 dígitos',
     manualEntrySubmit: 'Buscar libro',
     addLibraryTitle: 'Crear nueva biblioteca',
+    bookTitleLabel: 'Título del libro *',
+    bookAuthorLabel: 'Autor *',
+    bookGenreLabel: 'Género',
+    bookYearLabel: 'Año de publicación',
+    bookPublisherLabel: 'Editorial',
+    bookIsbnOptionalLabel: 'ISBN (opcional)',
+    addCustomBookSubmit: 'Añadir libro a la biblioteca',
     libraryNameLabel: 'Nombre de la biblioteca',
     libraryDescLabel: 'Descripción (opcional)',
     deleteBookTitle: 'Eliminar libro',

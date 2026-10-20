@@ -208,6 +208,7 @@ async function fetchFromGoogleBooks(cleanIsbn: string): Promise<Partial<Book> | 
 
       const title = volumeInfo.title + (volumeInfo.subtitle ? `: ${volumeInfo.subtitle}` : '');
       const authors = Array.isArray(volumeInfo.authors) ? volumeInfo.authors.join(', ') : undefined;
+      const genre = Array.isArray(volumeInfo.categories) ? volumeInfo.categories.join(', ') : undefined;
       const publisher = volumeInfo.publisher;
       const publishedDate = volumeInfo.publishedDate;
       let publishedYear: string | undefined = undefined;
@@ -226,6 +227,7 @@ async function fetchFromGoogleBooks(cleanIsbn: string): Promise<Partial<Book> | 
       return {
         title,
         authors,
+        genre,
         publisher,
         publishedYear,
         coverUrl,
@@ -262,6 +264,9 @@ async function fetchFromOpenLibrary(cleanIsbn: string): Promise<Partial<Book> | 
         const authors = Array.isArray(bookData.authors)
           ? bookData.authors.map((a: { name: string }) => a.name).join(', ')
           : undefined;
+        const genre = Array.isArray(bookData.subjects)
+          ? bookData.subjects.map((s: { name: string }) => s.name).slice(0, 3).join(', ')
+          : undefined;
         const publisher = Array.isArray(bookData.publishers)
           ? bookData.publishers.map((p: { name: string }) => p.name).join(', ')
           : undefined;
@@ -280,6 +285,7 @@ async function fetchFromOpenLibrary(cleanIsbn: string): Promise<Partial<Book> | 
         return {
           title,
           authors,
+          genre,
           publisher,
           publishedYear,
           coverUrl,
@@ -308,6 +314,7 @@ async function fetchFromOpenLibrary(cleanIsbn: string): Promise<Partial<Book> | 
         const title = doc.title;
         if (title) {
           const authors = Array.isArray(doc.author_name) ? doc.author_name.join(', ') : undefined;
+          const genre = Array.isArray(doc.subject) ? doc.subject.slice(0, 3).join(', ') : undefined;
           const publisher = Array.isArray(doc.publisher) ? doc.publisher[0] : undefined;
           const publishedYear = doc.first_publish_year ? String(doc.first_publish_year) : undefined;
 
@@ -321,6 +328,7 @@ async function fetchFromOpenLibrary(cleanIsbn: string): Promise<Partial<Book> | 
           return {
             title,
             authors,
+            genre,
             publisher,
             publishedYear,
             coverUrl,
@@ -368,9 +376,12 @@ export async function fetchBookByIsbnDetailed(isbn: string): Promise<BookFetchRe
       return {
         success: true,
         book: {
+          id: `book_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           isbn: cleanIsbn,
           title: result1.title,
           authors: result1.authors,
+          genre: result1.genre,
+          readingStatus: 'unread',
           publishedYear: result1.publishedYear,
           publisher: result1.publisher,
           coverUrl: result1.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
@@ -392,9 +403,12 @@ export async function fetchBookByIsbnDetailed(isbn: string): Promise<BookFetchRe
       return {
         success: true,
         book: {
+          id: `book_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           isbn: cleanIsbn,
           title: result2.title,
           authors: result2.authors,
+          genre: result2.genre,
+          readingStatus: 'unread',
           publishedYear: result2.publishedYear,
           publisher: result2.publisher,
           coverUrl: result2.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
@@ -416,9 +430,12 @@ export async function fetchBookByIsbnDetailed(isbn: string): Promise<BookFetchRe
       return {
         success: true,
         book: {
+          id: `book_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           isbn: cleanIsbn,
           title: result3.title,
           authors: result3.authors,
+          genre: result3.genre,
+          readingStatus: 'unread',
           publishedYear: result3.publishedYear,
           publisher: result3.publisher,
           coverUrl: result3.coverUrl || `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`,
