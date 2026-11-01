@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats, Html5QrcodeScannerState } from 'html5-qrcode';
-import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2, BookPlus } from 'lucide-react';
+import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2, BookPlus, Loader2, Check } from 'lucide-react';
 
 import type { Library } from '../types/book';
 import type { Translations, Language } from '../services/i18n';
@@ -11,11 +11,13 @@ interface ScannerProps {
   isBatchMode: boolean;
   onToggleBatchMode: (isBatch: boolean) => void;
   batchCount: number;
-  onScanSuccess: (decodedText: string) => void;
+  onScanSuccess: (decodedText: string) => Promise<boolean | void> | void;
   onOpenManualEntry: () => void;
   onOpenManualEntryNoIsbn?: () => void;
   onFinishBatch: () => void;
   resumeTrigger?: number;
+  isProcessing?: boolean;
+  showSuccessCheck?: boolean;
   libraries: Library[];
   selectedLibraryId: string;
   onSelectLibrary: (id: string) => void;
@@ -33,6 +35,8 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
   onOpenManualEntryNoIsbn,
   onFinishBatch,
   resumeTrigger,
+  isProcessing = false,
+  showSuccessCheck = false,
   libraries,
   selectedLibraryId,
   onSelectLibrary,
@@ -45,12 +49,21 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const regionId = 'reader';
 
-  const lastScanTimeRef = useRef<number>(0);
   const isBatchModeRef = useRef<boolean>(isBatchMode);
+  const isProcessingRef = useRef<boolean>(isProcessing);
+  const onScanSuccessRef = useRef(onScanSuccess);
 
   useEffect(() => {
     isBatchModeRef.current = isBatchMode;
   }, [isBatchMode]);
+
+  useEffect(() => {
+    isProcessingRef.current = isProcessing;
+  }, [isProcessing]);
+
+  useEffect(() => {
+    onScanSuccessRef.current = onScanSuccess;
+  }, [onScanSuccess]);
 
   // Handle resume if scanner was paused in single mode
   useEffect(() => {
@@ -112,14 +125,13 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
           (decodedText) => {
             if (!isMounted) return;
 
+            // If scanner is currently processing a book or waiting on cooldown, ignore incoming scans
+            if (isProcessingRef.current) {
+              return;
+            }
+
             if (isBatchModeRef.current) {
-              const now = Date.now();
-              if (now - lastScanTimeRef.current < 3000) {
-                // Ignore scans during 3-second cooldown
-                return;
-              }
-              lastScanTimeRef.current = now;
-              onScanSuccess(decodedText);
+              onScanSuccessRef.current(decodedText);
             } else {
               try {
                 if (html5Qrcode.getState() === Html5QrcodeScannerState.SCANNING) {
@@ -128,7 +140,7 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
               } catch (e) {
                 console.error('Error pausing scanner:', e);
               }
-              onScanSuccess(decodedText);
+              onScanSuccessRef.current(decodedText);
             }
           },
           () => {
@@ -228,10 +240,44 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
         <div id={regionId} className="w-full h-full object-cover" />
 
         {/* Animated Blue Laser Scanner Line */}
-        {isScanning && !error && (
+        {isScanning && !error && !isProcessing && (
           <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6">
             <div className="relative w-full h-full">
               <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_15px_#3b82f6,0_0_25px_#60a5fa] animate-scanner-line" />
+            </div>
+          </div>
+        )}
+
+        {/* Ready status pill when scanner is scanning and ready */}
+        {isScanning && !error && !isProcessing && (
+          <div className="absolute top-4 left-4 z-20 pointer-events-none">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/80 backdrop-blur-md text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 border border-emerald-400/40 animate-in fade-in">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span>{t.scannerReady}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Corner Success Checkmark (appears in top-right corner when a book is added) */}
+        {showSuccessCheck && (
+          <div
+            data-testid="scanner-success-checkmark"
+            className="absolute top-4 right-4 z-30 pointer-events-none flex items-center gap-1.5 bg-emerald-500 text-white px-3.5 py-1.5 rounded-2xl shadow-xl shadow-emerald-500/40 border border-emerald-400 font-bold text-xs animate-in zoom-in-95 duration-200"
+          >
+            <Check className="w-4 h-4 stroke-[3]" />
+            <span>{t.bookAddedCheck}</span>
+          </div>
+        )}
+
+        {/* In-camera processing overlay with spinning loader */}
+        {isProcessing && (
+          <div
+            data-testid="scanner-processing-overlay"
+            className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center animate-in fade-in duration-150"
+          >
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-2xl flex flex-col items-center gap-2 max-w-[200px]">
+              <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+              <span className="text-white text-xs font-semibold tracking-wide">{t.scannerProcessing}</span>
             </div>
           </div>
         )}
