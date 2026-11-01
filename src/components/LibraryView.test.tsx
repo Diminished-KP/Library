@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { LibraryView } from './LibraryView';
 import { translations } from '../services/i18n';
 import type { Book, Library } from '../types/book';
@@ -38,7 +38,11 @@ const mockBooks: Book[] = [
 ];
 
 describe('LibraryView', () => {
-  it('renders library tabs, book items with quantity badge, and side alphabet sidebar', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('renders library tabs, book items in grid, and side alphabet sidebar', () => {
     const onSelectLibrary = vi.fn();
     const onOpenAddLibraryModal = vi.fn();
     const onDeleteLibrary = vi.fn();
@@ -61,9 +65,9 @@ describe('LibraryView', () => {
       />
     );
 
-    // Checks title and quantity badge
+    // Checks title and author
     expect(screen.getByText('Babička')).toBeDefined();
-    expect(screen.getByText('2 ks')).toBeDefined();
+    expect(screen.getByText('Božena Němcová')).toBeDefined();
     expect(screen.getByText('Čapek a jeho svět')).toBeDefined();
 
     // Check alphabet side index headers (# for 1984, B for Babička, Č for Čapek)
@@ -72,7 +76,7 @@ describe('LibraryView', () => {
     expect(screen.getAllByText('#').length).toBeGreaterThan(0);
   });
 
-  it('filters books by genre and author', () => {
+  it('filters books by genre and author using single filter button', () => {
     const booksWithGenre: Book[] = [
       {
         isbn: '111',
@@ -112,11 +116,12 @@ describe('LibraryView', () => {
     expect(screen.getByText('Duna')).toBeDefined();
     expect(screen.getByText('Sherlock Holmes')).toBeDefined();
 
+    // Open the single filter menu
+    const filterBtn = screen.getByTestId('library-filter-button');
+    fireEvent.click(filterBtn);
+
     // Filter by genre 'Sci-Fi'
-    const selects = screen.getAllByRole('combobox');
-    const genreSelect = selects.find((s) =>
-      Array.from(s.querySelectorAll('option')).some((opt) => opt.value === 'Sci-Fi')
-    )!;
+    const genreSelect = screen.getByDisplayValue(translations.cs.allGenres);
     fireEvent.change(genreSelect, { target: { value: 'Sci-Fi' } });
 
     expect(screen.getByText('Duna')).toBeDefined();

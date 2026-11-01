@@ -30,7 +30,6 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
 
   const [title, setTitle] = useState('');
   const [authors, setAuthors] = useState('');
-  const [genre, setGenre] = useState('');
   const [publishedYear, setPublishedYear] = useState('');
   const [publisher, setPublisher] = useState('');
   const [isbn, setIsbn] = useState('');
@@ -54,7 +53,6 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
       isbn: cleanIsbn,
       title: title.trim(),
       authors: authors.trim(),
-      genre: genre.trim() || undefined,
       readingStatus: 'unread',
       publishedYear: publishedYear.trim() || undefined,
       publisher: publisher.trim() || undefined,
@@ -69,7 +67,6 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
     // Reset form
     setTitle('');
     setAuthors('');
-    setGenre('');
     setPublishedYear('');
     setPublisher('');
     setIsbn('');
@@ -147,19 +144,6 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
                 if (error) setError('');
               }}
               placeholder="Karel Čapek"
-              className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} placeholder:${activeThemeConfig.textSecondaryClass} text-sm rounded-xl p-3 outline-none focus:border-blue-500`}
-            />
-          </div>
-
-          <div>
-            <label className={`text-xs font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
-              {t.bookGenreLabel}
-            </label>
-            <input
-              type="text"
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              placeholder="Sci-Fi, Román"
               className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} placeholder:${activeThemeConfig.textSecondaryClass} text-sm rounded-xl p-3 outline-none focus:border-blue-500`}
             />
           </div>

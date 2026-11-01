@@ -3,14 +3,14 @@ import type { Book, ReadingStatus } from '../types/book';
 import type { Translations } from '../services/i18n';
 import type { ThemeId } from '../types/theme';
 import { themes } from '../types/theme';
-import { X, BookOpen, Bookmark, CheckCircle2, Clock, Edit2, Save, Trash2 } from 'lucide-react';
+import { X, BookOpen, Bookmark, CheckCircle2, Clock, Trash2 } from 'lucide-react';
 
 interface BookDetailModalProps {
   book: Book | null;
   isOpen: boolean;
   onClose: () => void;
   onUpdateReadingStatus: (book: Book, status: ReadingStatus) => void;
-  onUpdateBook: (updatedBook: Book) => void;
+  onUpdateBook?: (updatedBook: Book) => void;
   onDeleteBook?: (book: Book) => void;
   t: Translations;
   currentTheme?: ThemeId;
@@ -49,34 +49,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   isOpen,
   onClose,
   onUpdateReadingStatus,
-  onUpdateBook,
   onDeleteBook,
   t,
   currentTheme = 'default',
 }) => {
   const activeThemeConfig = themes[currentTheme] || themes.default;
 
-  const [isEditingGenre, setIsEditingGenre] = useState(false);
-  const [genreInput, setGenreInput] = useState(book?.genre || '');
-
-  const [prevBook, setPrevBook] = useState<Book | null>(null);
-  if (book !== prevBook) {
-    setPrevBook(book);
-    setGenreInput(book?.genre || '');
-    setIsEditingGenre(false);
-  }
-
   if (!isOpen || !book) return null;
 
   const currentStatus: ReadingStatus = book.readingStatus || 'unread';
-
-  const handleSaveGenre = () => {
-    onUpdateBook({
-      ...book,
-      genre: genreInput.trim() || undefined,
-    });
-    setIsEditingGenre(false);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
@@ -151,41 +132,10 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
             {/* Genre section */}
             <div className="pt-1">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className={`text-xs font-bold ${activeThemeConfig.textSecondaryClass}`}>{t.genreLabel}</span>
-                {!isEditingGenre && (
-                  <button
-                    onClick={() => setIsEditingGenre(true)}
-                    className={`text-[11px] ${activeThemeConfig.accentClass} hover:underline flex items-center gap-1 font-semibold`}
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    <span>{book.genre ? t.edit : 'Přidat žánr'}</span>
-                  </button>
-                )}
-              </div>
-
-              {isEditingGenre ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <input
-                    type="text"
-                    value={genreInput}
-                    onChange={(e) => setGenreInput(e.target.value)}
-                    placeholder="např. Detektivka, Sci-Fi..."
-                    className={`flex-1 ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} text-xs rounded-xl px-3 py-1.5 outline-none focus:border-blue-500`}
-                  />
-                  <button
-                    onClick={handleSaveGenre}
-                    className={`p-2 ${activeThemeConfig.buttonPrimaryClass} rounded-xl text-xs`}
-                    title={t.save}
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <p className={`text-xs ${activeThemeConfig.textPrimaryClass} font-medium`}>
-                  {book.genre || <span className="italic opacity-60">Neuvedeno</span>}
-                </p>
-              )}
+              <span className={`text-xs font-bold ${activeThemeConfig.textSecondaryClass} block mb-1`}>{t.genreLabel}</span>
+              <p className={`text-xs ${activeThemeConfig.textPrimaryClass} font-medium`}>
+                {book.genre || <span className="italic opacity-60">Neuvedeno</span>}
+              </p>
             </div>
 
             {/* Other Metadata */}
