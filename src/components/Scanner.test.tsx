@@ -104,4 +104,67 @@ describe('ScannerComponent', () => {
     expect(mockStop).toHaveBeenCalled();
     expect(mockClear).toHaveBeenCalled();
   });
+
+  it('renders in-camera loading spinner overlay when isProcessing is true', async () => {
+    await act(async () => {
+      render(<ScannerComponent {...defaultProps} isProcessing={true} />);
+    });
+
+    expect(screen.getByTestId('scanner-processing-overlay')).toBeDefined();
+    expect(screen.getByText(translations.cs.scannerProcessing)).toBeDefined();
+    // Ready pill and laser shouldn't show while processing
+    expect(screen.queryByText(translations.cs.scannerReady)).toBeNull();
+  });
+
+  it('renders ready indicator pill when scanner is scanning and not processing', async () => {
+    await act(async () => {
+      render(<ScannerComponent {...defaultProps} isProcessing={false} />);
+    });
+
+    expect(screen.getByText(translations.cs.scannerReady)).toBeDefined();
+    expect(screen.queryByTestId('scanner-processing-overlay')).toBeNull();
+  });
+
+  it('renders corner success checkmark when showSuccessCheck is true', async () => {
+    await act(async () => {
+      render(<ScannerComponent {...defaultProps} showSuccessCheck={true} />);
+    });
+
+    expect(screen.getByTestId('scanner-success-checkmark')).toBeDefined();
+    expect(screen.getByText(translations.cs.bookAddedCheck)).toBeDefined();
+  });
+
+  it('ignores scanned codes while isProcessing is true', async () => {
+    const onScanSuccess = vi.fn();
+    let scanCallback: (decodedText: string) => void = () => {};
+
+    mockStart.mockImplementation((_facing, _config, successCb) => {
+      scanCallback = successCb;
+      return Promise.resolve();
+    });
+
+    const { rerender } = render(
+      <ScannerComponent {...defaultProps} onScanSuccess={onScanSuccess} isProcessing={true} />
+    );
+
+    // Camera has started, attempt scan while isProcessing is true
+    await act(async () => {
+      scanCallback('9788000058825');
+    });
+
+    expect(onScanSuccess).not.toHaveBeenCalled();
+
+    // Now scanner becomes ready (isProcessing: false)
+    await act(async () => {
+      rerender(
+        <ScannerComponent {...defaultProps} onScanSuccess={onScanSuccess} isProcessing={false} />
+      );
+    });
+
+    await act(async () => {
+      scanCallback('9788000058825');
+    });
+
+    expect(onScanSuccess).toHaveBeenCalledWith('9788000058825');
+  });
 });

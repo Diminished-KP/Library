@@ -15,7 +15,7 @@ import { BookPreviewModal } from './components/BookPreviewModal';
 import { BatchReviewModal } from './components/BatchReviewModal';
 import { LibraryView } from './components/LibraryView';
 import { AddLibraryModal } from './components/AddLibraryModal';
-import { ArrowLeft, Loader2, Info } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 
 type View = 'menu' | 'scanner' | 'library' | 'settings';
 
@@ -105,7 +105,8 @@ export default function App() {
   const [isManualNoIsbnModalOpen, setIsManualNoIsbnModalOpen] = useState(false);
   const [isAddLibraryModalOpen, setIsAddLibraryModalOpen] = useState(false);
   const [scannedBook, setScannedBook] = useState<Book | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isScannerProcessing, setIsScannerProcessing] = useState(false);
+  const [showScannerSuccessCheck, setShowScannerSuccessCheck] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [resumeTrigger, setResumeTrigger] = useState(0);
 
@@ -192,7 +193,17 @@ export default function App() {
       (b) => b.isbn === cleanIsbn && b.libraryId === activeLibraryId
     );
 
+    const triggerSuccessCheck = () => {
+      setShowScannerSuccessCheck(true);
+      setTimeout(() => {
+        setShowScannerSuccessCheck(false);
+      }, 1800);
+    };
+
     if (isBatchMode) {
+      setIsScannerProcessing(true);
+      const scanStartTime = Date.now();
+
       const existingInBatch = batchBooks.find((b) => b.isbn === cleanIsbn);
       if (existingInBatch) {
         setBatchBooks((prev) =>
@@ -201,16 +212,27 @@ export default function App() {
           )
         );
         showNotification(`${t.quantityIncreasedInBatch} ${existingInBatch.title}`);
+        triggerSuccessCheck();
+
+        // Enforce cooldown so user clearly sees the spinner until scanner is ready
+        const elapsed = Date.now() - scanStartTime;
+        const remainingCooldown = Math.max(0, 1800 - elapsed);
+        setTimeout(() => {
+          setIsScannerProcessing(false);
+        }, remainingCooldown);
         return;
       }
 
-      setIsLoading(true);
       try {
         const fetchResult = await fetchBookByIsbnDetailed(cleanIsbn);
-        setIsLoading(false);
 
         if (!fetchResult.success) {
           showNotification(t[fetchResult.message === 'Kniha s tímto ISBN nebyla nalezena v dostupné databázi.' ? 'isbnNotFound' : 'isbnFetchError'] || fetchResult.message);
+          const elapsed = Date.now() - scanStartTime;
+          const remainingCooldown = Math.max(0, 1200 - elapsed);
+          setTimeout(() => {
+            setIsScannerProcessing(false);
+          }, remainingCooldown);
           return;
         }
 
@@ -222,17 +244,29 @@ export default function App() {
 
         setBatchBooks((prev) => [bookToAdd, ...prev]);
         showNotification(`${t.scannedInBatch} ${bookToAdd.title}`);
+        triggerSuccessCheck();
+
+        // Keep scanner busy with spinner during post-fetch cooldown so user knows when ready
+        const elapsed = Date.now() - scanStartTime;
+        const remainingCooldown = Math.max(0, 1800 - elapsed);
+        setTimeout(() => {
+          setIsScannerProcessing(false);
+        }, remainingCooldown);
       } catch (err) {
-        setIsLoading(false);
         console.error('Error fetching book in batch:', err);
         showNotification(`${t.isbnFetchError} (${cleanIsbn})`);
+        const elapsed = Date.now() - scanStartTime;
+        const remainingCooldown = Math.max(0, 1200 - elapsed);
+        setTimeout(() => {
+          setIsScannerProcessing(false);
+        }, remainingCooldown);
       }
     } else {
       // Single scan mode
-      setIsLoading(true);
+      setIsScannerProcessing(true);
       try {
         const fetchResult = await fetchBookByIsbnDetailed(cleanIsbn);
-        setIsLoading(false);
+        setIsScannerProcessing(false);
 
         if (!fetchResult.success) {
           showNotification(t[fetchResult.message === 'Kniha s tímto ISBN nebyla nalezena v dostupné databázi.' ? 'isbnNotFound' : 'isbnFetchError'] || fetchResult.message);
@@ -246,9 +280,10 @@ export default function App() {
           quantity: existingInLibrary ? existingInLibrary.quantity + 1 : 1,
         };
 
+        triggerSuccessCheck();
         setScannedBook(bookToAdd);
       } catch (err) {
-        setIsLoading(false);
+        setIsScannerProcessing(false);
         console.error('Error fetching book:', err);
         showNotification(`${t.isbnFetchError} (${cleanIsbn})`);
         setResumeTrigger((prev) => prev + 1);
@@ -386,13 +421,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className={`fixed inset-0 z-50 ${activeThemeConfig.bgClass}/80 backdrop-blur-sm flex flex-col items-center justify-center p-4`}>
-          <Loader2 className={`w-12 h-12 ${activeThemeConfig.accentClass} animate-spin mb-3`} />
-          <p className={`${activeThemeConfig.textPrimaryClass} font-medium text-sm`}>{t.loading}</p>
-        </div>
-      )}
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col justify-center p-4 sm:p-6 max-w-4xl mx-auto w-full">
@@ -441,6 +469,8 @@ export default function App() {
               onOpenManualEntryNoIsbn={() => setIsManualNoIsbnModalOpen(true)}
               onFinishBatch={handleFinishBatch}
               resumeTrigger={resumeTrigger}
+              isProcessing={isScannerProcessing}
+              showSuccessCheck={showScannerSuccessCheck}
               libraries={libraries}
               selectedLibraryId={activeLibraryId}
               onSelectLibrary={setActiveLibraryId}

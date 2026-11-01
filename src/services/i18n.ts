@@ -101,6 +101,9 @@ export interface Translations {
   startingCamera: string;
   cameraError: string;
   finishScanning: string;
+  scannerProcessing: string;
+  scannerReady: string;
+  bookAddedCheck: string;
 
   // Modal extras
   targetLibraryLabel: string;
@@ -253,6 +256,9 @@ export const translations: Record<Language, Translations> = {
     startingCamera: 'Spouštím skener fotoaparátu...',
     cameraError: 'Nedařilo se spustit fotoaparát. Povolte prosím přístup k fotoaparátu v prohlížeči.',
     finishScanning: 'Dokončit skenování',
+    scannerProcessing: 'Zpracovávám...',
+    scannerReady: 'Připraveno ke skenování',
+    bookAddedCheck: 'Kniha načtena',
 
     targetLibraryLabel: 'Knihovna:',
     addToLibraryButton: 'Přidat do knihovny',
@@ -401,6 +407,9 @@ export const translations: Record<Language, Translations> = {
     startingCamera: 'Starting camera scanner...',
     cameraError: 'Failed to start camera. Please grant camera access in your browser.',
     finishScanning: 'Finish scanning',
+    scannerProcessing: 'Processing...',
+    scannerReady: 'Ready to scan',
+    bookAddedCheck: 'Book scanned',
 
     targetLibraryLabel: 'Library:',
     addToLibraryButton: 'Add to Library',
@@ -549,6 +558,9 @@ export const translations: Record<Language, Translations> = {
     startingCamera: 'Iniciando escáner de cámara...',
     cameraError: 'Error al iniciar la cámara. Permite el acceso a la cámara en tu navegador.',
     finishScanning: 'Finalizar escaneo',
+    scannerProcessing: 'Procesando...',
+    scannerReady: 'Listo para escanear',
+    bookAddedCheck: 'Libro escaneado',
 
     targetLibraryLabel: 'Biblioteca:',
     addToLibraryButton: 'Añadir a la biblioteca',
