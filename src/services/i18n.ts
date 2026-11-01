@@ -108,6 +108,19 @@ export interface Translations {
   scannerProcessing: string;
   scannerReady: string;
   bookAddedCheck: string;
+  barcodeScannerTab: string;
+  textIsbnScannerTab: string;
+  captureTextIsbnButton: string;
+  ocrProcessing: string;
+  isbnSelectionTitle: string;
+  multipleIsbnsFound: string;
+  singleIsbnFound: string;
+  noIsbnFoundInImage: string;
+  confirmIsbnPrompt: string;
+  isbnCandidateLabel: string;
+  confirmAndSearch: string;
+  retakePhoto: string;
+  manualIsbnCorrection: string;
 
   // Modal extras
   targetLibraryLabel: string;
@@ -267,6 +280,19 @@ export const translations: Record<Language, Translations> = {
     scannerProcessing: 'Zpracovávám...',
     scannerReady: 'Připraveno ke skenování',
     bookAddedCheck: 'Kniha načtena',
+    barcodeScannerTab: 'Čárový kód',
+    textIsbnScannerTab: 'Textové ISBN',
+    captureTextIsbnButton: 'Vyfotit a rozpoznat ISBN',
+    ocrProcessing: 'Rozpoznávám text ISBN...',
+    isbnSelectionTitle: 'Kontrola rozpoznaného ISBN',
+    multipleIsbnsFound: 'Na snímku bylo nalezeno více čísel ISBN. Vyberte požadované:',
+    singleIsbnFound: 'Bylo rozpoznáno následující ISBN. Zkontrolujte ho před vyhledáním:',
+    noIsbnFoundInImage: 'Na snímku nebylo nalezeno žádné platné číslo ISBN.',
+    confirmIsbnPrompt: 'Číslo ISBN k vyhledání:',
+    isbnCandidateLabel: 'Nalezená varianta',
+    confirmAndSearch: 'Potvrdit a vyhledat',
+    retakePhoto: 'Zkusit vyfotit znovu',
+    manualIsbnCorrection: 'Zadat ISBN ručně',
 
     targetLibraryLabel: 'Knihovna:',
     addToLibraryButton: 'Přidat do knihovny',
@@ -422,6 +448,19 @@ export const translations: Record<Language, Translations> = {
     scannerProcessing: 'Processing...',
     scannerReady: 'Ready to scan',
     bookAddedCheck: 'Book scanned',
+    barcodeScannerTab: 'Barcode',
+    textIsbnScannerTab: 'Text ISBN',
+    captureTextIsbnButton: 'Capture and recognize ISBN',
+    ocrProcessing: 'Recognizing ISBN text...',
+    isbnSelectionTitle: 'Review recognized ISBN',
+    multipleIsbnsFound: 'Multiple ISBNs were found in the image. Please select one:',
+    singleIsbnFound: 'The following ISBN was recognized. Please review before searching:',
+    noIsbnFoundInImage: 'No valid ISBN was detected in the captured image.',
+    confirmIsbnPrompt: 'ISBN to search for:',
+    isbnCandidateLabel: 'Found candidate',
+    confirmAndSearch: 'Confirm and Search',
+    retakePhoto: 'Retake photo',
+    manualIsbnCorrection: 'Enter ISBN manually',
 
     targetLibraryLabel: 'Library:',
     addToLibraryButton: 'Add to Library',
@@ -577,6 +616,19 @@ export const translations: Record<Language, Translations> = {
     scannerProcessing: 'Procesando...',
     scannerReady: 'Listo para escanear',
     bookAddedCheck: 'Libro escaneado',
+    barcodeScannerTab: 'Código de barras',
+    textIsbnScannerTab: 'ISBN de texto',
+    captureTextIsbnButton: 'Capturar y reconocer ISBN',
+    ocrProcessing: 'Reconociendo texto ISBN...',
+    isbnSelectionTitle: 'Revisar ISBN reconocido',
+    multipleIsbnsFound: 'Se encontraron múltiples ISBN en la imagen. Selecciona uno:',
+    singleIsbnFound: 'Se reconoció el siguiente ISBN. Revísalo antes de buscar:',
+    noIsbnFoundInImage: 'No se detectó ningún ISBN válido en la imagen capturada.',
+    confirmIsbnPrompt: 'ISBN a buscar:',
+    isbnCandidateLabel: 'Candidato encontrado',
+    confirmAndSearch: 'Confirmar y buscar',
+    retakePhoto: 'Volver a tomar foto',
+    manualIsbnCorrection: 'Ingresar ISBN manualmente',
 
     targetLibraryLabel: 'Biblioteca:',
     addToLibraryButton: 'Añadir a la biblioteca',

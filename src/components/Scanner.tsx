@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats, Html5QrcodeScannerState } from 'html5-qrcode';
-import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2, BookPlus, Loader2, Check } from 'lucide-react';
+import { Camera, Keyboard, AlertCircle, Layers, Scan, CheckCircle2, BookPlus, Loader2, Check, FileText, Barcode } from 'lucide-react';
 
 import type { Library } from '../types/book';
 import type { Translations, Language } from '../services/i18n';
 import type { ThemeId } from '../types/theme';
 import { themes } from '../types/theme';
+import { recognizeIsbnsFromImage } from '../services/ocrService';
+import { IsbnSelectionModal } from './IsbnSelectionModal';
+
+export type ScanInputType = 'barcode' | 'text';
 
 interface ScannerProps {
   isBatchMode: boolean;
@@ -44,14 +48,24 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
   currentTheme = 'default',
 }) => {
   const activeThemeConfig = themes[currentTheme] || themes.default;
+  const [scanType, setScanType] = useState<ScanInputType>('barcode');
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+  const [detectedIsbns, setDetectedIsbns] = useState<string[]>([]);
+  const [isIsbnSelectionOpen, setIsIsbnSelectionOpen] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const regionId = 'reader';
 
+  const scanTypeRef = useRef<ScanInputType>(scanType);
   const isBatchModeRef = useRef<boolean>(isBatchMode);
   const isProcessingRef = useRef<boolean>(isProcessing);
   const onScanSuccessRef = useRef(onScanSuccess);
+
+  useEffect(() => {
+    scanTypeRef.current = scanType;
+  }, [scanType]);
 
   useEffect(() => {
     isBatchModeRef.current = isBatchMode;
@@ -125,6 +139,11 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
           (decodedText) => {
             if (!isMounted) return;
 
+            // If in text OCR mode, ignore continuous barcode detection
+            if (scanTypeRef.current === 'text') {
+              return;
+            }
+
             // If scanner is currently processing a book or waiting on cooldown, ignore incoming scans
             if (isProcessingRef.current) {
               return;
@@ -174,6 +193,48 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
     };
   }, [onScanSuccess, t.cameraError]);
 
+  const handleCaptureTextIsbn = async () => {
+    if (isProcessing || isOcrProcessing) return;
+
+    // Grab frame from video element inside container
+    const container = document.getElementById(regionId);
+    const video = container?.querySelector('video');
+
+    if (!video) {
+      // Fallback: directly open modal with manual input if video element not found
+      setDetectedIsbns([]);
+      setIsIsbnSelectionOpen(true);
+      return;
+    }
+
+    try {
+      setIsOcrProcessing(true);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+
+      const { isbns } = await recognizeIsbnsFromImage(canvas);
+      setDetectedIsbns(isbns);
+      setIsIsbnSelectionOpen(true);
+    } catch (err) {
+      console.error('Error during text ISBN capture:', err);
+      setDetectedIsbns([]);
+      setIsIsbnSelectionOpen(true);
+    } finally {
+      setIsOcrProcessing(false);
+    }
+  };
+
+  const handleConfirmSelectedIsbn = (isbn: string) => {
+    setIsIsbnSelectionOpen(false);
+    onScanSuccess(isbn);
+  };
+
   return (
     <div className="flex flex-col items-center w-full max-w-lg mx-auto">
       {/* Target Library Selector Dropdown */}
@@ -195,7 +256,36 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
         </select>
       </div>
 
-      {/* Mode selector toggle */}
+      {/* Target input mode toggle (Možnost A: Barcode vs Text ISBN) */}
+      <div className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} p-1.5 rounded-2xl flex gap-1 mb-3 shadow-md`}>
+        <button
+          type="button"
+          onClick={() => setScanType('barcode')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition ${
+            scanType === 'barcode'
+              ? `${activeThemeConfig.buttonPrimaryClass} shadow-md`
+              : `${activeThemeConfig.textSecondaryClass} hover:${activeThemeConfig.textPrimaryClass}`
+          }`}
+        >
+          <Barcode className="w-4 h-4" />
+          <span>{t.barcodeScannerTab}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setScanType('text')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition ${
+            scanType === 'text'
+              ? `${activeThemeConfig.buttonPrimaryClass} shadow-md`
+              : `${activeThemeConfig.textSecondaryClass} hover:${activeThemeConfig.textPrimaryClass}`
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>{t.textIsbnScannerTab}</span>
+        </button>
+      </div>
+
+      {/* Single vs Batch selector toggle */}
       <div className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} p-1.5 rounded-2xl flex gap-1 mb-4 shadow-md`}>
         <button
           onClick={() => onToggleBatchMode(false)}
@@ -239,8 +329,8 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
       <div className={`relative w-full aspect-square ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center`}>
         <div id={regionId} className="w-full h-full object-cover" />
 
-        {/* Animated Blue Laser Scanner Line */}
-        {isScanning && !error && !isProcessing && (
+        {/* Animated Blue Laser Scanner Line (only in continuous barcode mode) */}
+        {isScanning && !error && !isProcessing && !isOcrProcessing && scanType === 'barcode' && (
           <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6">
             <div className="relative w-full h-full">
               <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_15px_#3b82f6,0_0_25px_#60a5fa] animate-scanner-line" />
@@ -248,8 +338,19 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
           </div>
         )}
 
+        {/* Text Mode Framing Guide */}
+        {isScanning && !error && !isProcessing && !isOcrProcessing && scanType === 'text' && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
+            <div className="w-full h-24 border-2 border-dashed border-blue-400/80 rounded-2xl bg-blue-500/5 flex items-center justify-center">
+              <span className="text-[11px] font-semibold text-blue-300 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+                {t.textIsbnScannerTab}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Ready status pill when scanner is scanning and ready */}
-        {isScanning && !error && !isProcessing && (
+        {isScanning && !error && !isProcessing && !isOcrProcessing && (
           <div className="absolute top-4 left-4 z-20 pointer-events-none">
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/80 backdrop-blur-md text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 border border-emerald-400/40 animate-in fade-in">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
@@ -269,15 +370,17 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
           </div>
         )}
 
-        {/* In-camera processing overlay with spinning loader */}
-        {isProcessing && (
+        {/* In-camera processing overlay with spinning loader (book fetch or OCR) */}
+        {(isProcessing || isOcrProcessing) && (
           <div
             data-testid="scanner-processing-overlay"
             className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center animate-in fade-in duration-150"
           >
             <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-2xl flex flex-col items-center gap-2 max-w-[200px]">
               <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-              <span className="text-white text-xs font-semibold tracking-wide">{t.scannerProcessing}</span>
+              <span className="text-white text-xs font-semibold tracking-wide">
+                {isOcrProcessing ? t.ocrProcessing : t.scannerProcessing}
+              </span>
             </div>
           </div>
         )}
@@ -303,8 +406,23 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
         )}
       </div>
 
+      {/* Camera shutter trigger button when in Text ISBN mode */}
+      {scanType === 'text' && (
+        <div className="w-full mt-3">
+          <button
+            type="button"
+            onClick={handleCaptureTextIsbn}
+            disabled={isProcessing || isOcrProcessing}
+            className="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-[0.98] text-white font-bold rounded-2xl transition flex items-center justify-center gap-2.5 shadow-xl shadow-blue-600/30 text-sm cursor-pointer disabled:opacity-50"
+          >
+            <Camera className="w-5 h-5" />
+            <span>{t.captureTextIsbnButton}</span>
+          </button>
+        </div>
+      )}
+
       {/* Action buttons under scanner */}
-      <div className="mt-5 w-full flex flex-col sm:flex-row gap-3">
+      <div className="mt-4 w-full flex flex-col sm:flex-row gap-3">
         {isBatchMode && (
           <button
             onClick={onFinishBatch}
@@ -335,6 +453,20 @@ export const ScannerComponent: React.FC<ScannerProps> = ({
           )}
         </div>
       </div>
+
+      {/* ISBN Selection & Confirmation Modal */}
+      <IsbnSelectionModal
+        isOpen={isIsbnSelectionOpen}
+        isbns={detectedIsbns}
+        onConfirm={handleConfirmSelectedIsbn}
+        onCancel={() => setIsIsbnSelectionOpen(false)}
+        onRetake={() => {
+          setIsIsbnSelectionOpen(false);
+          handleCaptureTextIsbn();
+        }}
+        t={t}
+        currentTheme={currentTheme}
+      />
     </div>
   );
 };
