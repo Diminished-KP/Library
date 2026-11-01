@@ -69,8 +69,23 @@ describe('ScannerComponent', () => {
       render(<ScannerComponent {...defaultProps} />);
     });
 
+    expect(screen.getByText(translations.cs.barcodeScannerTab)).toBeDefined();
+    expect(screen.getByText(translations.cs.textIsbnScannerTab)).toBeDefined();
     expect(screen.getByText(translations.cs.singleScanning)).toBeDefined();
     expect(mockStart).toHaveBeenCalled();
+  });
+
+  it('switches to Text ISBN mode and shows capture button', async () => {
+    await act(async () => {
+      render(<ScannerComponent {...defaultProps} />);
+    });
+
+    const textTab = screen.getByText(translations.cs.textIsbnScannerTab);
+    await act(async () => {
+      textTab.click();
+    });
+
+    expect(screen.getByText(translations.cs.captureTextIsbnButton)).toBeDefined();
   });
 
   it('stops and clears scanner on unmount without errors', async () => {
