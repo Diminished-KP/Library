@@ -62,6 +62,10 @@ export interface Translations {
   filterByAuthor: string;
   allGenres: string;
   allAuthors: string;
+  filters: string;
+  resetFilters: string;
+  readingStatusFilter: string;
+  allReadingStatuses: string;
 
   // Library view
   libraryTitle: string;
@@ -219,6 +223,10 @@ export const translations: Record<Language, Translations> = {
     filterByAuthor: 'Filtr autora',
     allGenres: 'Všechny žánry',
     allAuthors: 'Všichni autoři',
+    filters: 'Filtrovat',
+    resetFilters: 'Resetovat filtry',
+    readingStatusFilter: 'Stav čtení',
+    allReadingStatuses: 'Všechny stavy čtení',
 
     libraryTitle: 'Moje Knihovna',
     addBooksToLibrary: 'Přidat knihy',
@@ -370,6 +378,10 @@ export const translations: Record<Language, Translations> = {
     filterByAuthor: 'Filter Author',
     allGenres: 'All Genres',
     allAuthors: 'All Authors',
+    filters: 'Filter',
+    resetFilters: 'Reset filters',
+    readingStatusFilter: 'Reading Status',
+    allReadingStatuses: 'All reading statuses',
 
     libraryTitle: 'My Library',
     addBooksToLibrary: 'Add Books',
@@ -521,6 +533,10 @@ export const translations: Record<Language, Translations> = {
     filterByAuthor: 'Filtrar por autor',
     allGenres: 'Todos los géneros',
     allAuthors: 'Todos los autores',
+    filters: 'Filtrar',
+    resetFilters: 'Restablecer filtros',
+    readingStatusFilter: 'Estado de lectura',
+    allReadingStatuses: 'Todos los estados de lectura',
 
     libraryTitle: 'Mi Biblioteca',
     addBooksToLibrary: 'Añadir libros',

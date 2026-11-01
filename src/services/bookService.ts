@@ -99,6 +99,9 @@ const KNIHOVNY_CZ_FIELDS = [
   'issns',
   'cnb',
   'formats',
+  'genres',
+  'subjects',
+  'topics',
 ];
 
 /**
@@ -165,11 +168,23 @@ async function fetchFromKnihovnyCz(cleanIsbn: string): Promise<Partial<Book> | n
       if (yearMatch) publishedYear = yearMatch[0];
     }
 
+    let genre: string | undefined = undefined;
+    const rawGenres = matchedRecord.genres || matchedRecord.subjects || matchedRecord.topics;
+    if (Array.isArray(rawGenres) && rawGenres.length > 0) {
+      const cleanedGenres = rawGenres
+        .map((g: any) => (typeof g === 'string' ? cleanCatalogText(g) : cleanCatalogText(g?.name || g?.heading)))
+        .filter(Boolean);
+      if (cleanedGenres.length > 0) {
+        genre = cleanedGenres.slice(0, 3).join(', ');
+      }
+    }
+
     const coverUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
 
     return {
       title,
       authors: authors || undefined,
+      genre: genre || undefined,
       publisher: publisher || undefined,
       publishedYear: publishedYear || undefined,
       coverUrl,

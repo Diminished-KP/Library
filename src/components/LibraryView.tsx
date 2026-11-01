@@ -15,9 +15,9 @@ import {
   Download,
   Plus,
   Scan,
-  CheckCircle2,
-  Clock,
   Filter,
+  ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
 
 interface LibraryViewProps {
@@ -51,15 +51,15 @@ const BookCover: React.FC<{ coverUrl?: string; title: string; noCoverText: strin
         src={coverUrl}
         alt={title}
         onError={() => setHasError(true)}
-        className={`w-16 h-24 object-cover rounded-lg border ${activeThemeConfig.borderClass} shadow-sm flex-shrink-0`}
+        className={`w-full aspect-[2/3] object-cover rounded-xl border ${activeThemeConfig.borderClass} shadow-md`}
       />
     );
   }
 
   return (
-    <div className={`w-16 h-24 ${activeThemeConfig.cardBgClass} rounded-lg border ${activeThemeConfig.borderClass} flex flex-col items-center justify-center ${activeThemeConfig.textSecondaryClass} flex-shrink-0 p-1 text-center`}>
-      <BookOpen className={`w-6 h-6 mb-1 opacity-40 ${activeThemeConfig.textSecondaryClass}`} />
-      <span className={`text-[9px] ${activeThemeConfig.textSecondaryClass} font-medium`}>{noCoverText}</span>
+    <div className={`w-full aspect-[2/3] ${activeThemeConfig.cardBgClass} rounded-xl border ${activeThemeConfig.borderClass} flex flex-col items-center justify-center ${activeThemeConfig.textSecondaryClass} p-2 text-center shadow-inner`}>
+      <BookOpen className={`w-8 h-8 mb-1.5 opacity-40 ${activeThemeConfig.textSecondaryClass}`} />
+      <span className={`text-[10px] ${activeThemeConfig.textSecondaryClass} font-medium line-clamp-2`}>{noCoverText}</span>
     </div>
   );
 };
@@ -85,6 +85,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [selectedBookForDetail, setSelectedBookForDetail] = useState<Book | null>(null);
   const [deletingBook, setDeletingBook] = useState<Book | null>(null);
@@ -124,6 +125,20 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     });
     return Array.from(set).sort();
   }, [libraryBooks]);
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedGenre !== 'all') count++;
+    if (selectedAuthor !== 'all') count++;
+    if (selectedStatus !== 'all') count++;
+    return count;
+  }, [selectedGenre, selectedAuthor, selectedStatus]);
+
+  const handleResetFilters = () => {
+    setSelectedGenre('all');
+    setSelectedAuthor('all');
+    setSelectedStatus('all');
+  };
 
   const filteredBooks = useMemo(() => {
     return libraryBooks.filter((b) => {
@@ -294,56 +309,108 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             />
           </div>
 
-          {/* Filters Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          {/* Action Row: Single Filter Button & Export Button */}
+          <div className="flex items-center justify-between gap-3 pt-1 relative">
             <div className="relative">
-              <Filter className={`w-4 h-4 ${activeThemeConfig.textSecondaryClass} absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none`} />
-              <select
-                value={selectedGenre}
-                onChange={(e) => setSelectedGenre(e.target.value)}
-                className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+              <button
+                onClick={() => setIsFilterOpen((prev) => !prev)}
+                aria-label={t.filters}
+                data-testid="library-filter-button"
+                className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm border ${
+                  activeFiltersCount > 0
+                    ? `${activeThemeConfig.buttonPrimaryClass} border-transparent`
+                    : `${activeThemeConfig.cardBgClass} ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} hover:${activeThemeConfig.accentClass}`
+                }`}
               >
-                <option value="all">{t.allGenres}</option>
-                {availableGenres.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
+                <Filter className="w-4 h-4" />
+                <span>{t.filters}</span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-black/30 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {activeFiltersCount}
+                  </span>
+                )}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Single Filter Dropdown Menu */}
+              {isFilterOpen && (
+                <div
+                  className={`absolute left-0 mt-2 w-72 sm:w-80 ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-2xl p-4 shadow-2xl z-30 space-y-3.5 animate-in fade-in duration-150`}
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <span className={`text-xs font-bold ${activeThemeConfig.textPrimaryClass} flex items-center gap-1.5`}>
+                      <Filter className="w-3.5 h-3.5" />
+                      {t.filters}
+                    </span>
+                    {activeFiltersCount > 0 && (
+                      <button
+                        onClick={handleResetFilters}
+                        className={`text-[11px] ${activeThemeConfig.accentClass} hover:underline flex items-center gap-1 font-semibold`}
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>{t.resetFilters}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Genre Filter */}
+                  <div>
+                    <label className={`text-[11px] font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                      {t.genreLabel.replace(':', '')}
+                    </label>
+                    <select
+                      value={selectedGenre}
+                      onChange={(e) => setSelectedGenre(e.target.value)}
+                      className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+                    >
+                      <option value="all">{t.allGenres}</option>
+                      {availableGenres.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Author Filter */}
+                  <div>
+                    <label className={`text-[11px] font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                      {t.authorLabel.replace(':', '')}
+                    </label>
+                    <select
+                      value={selectedAuthor}
+                      onChange={(e) => setSelectedAuthor(e.target.value)}
+                      className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+                    >
+                      <option value="all">{t.allAuthors}</option>
+                      {availableAuthors.map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Status Filter */}
+                  <div>
+                    <label className={`text-[11px] font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                      {t.readingStatusFilter}
+                    </label>
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+                    >
+                      <option value="all">{t.allReadingStatuses}</option>
+                      <option value="unread">{t.statusUnread}</option>
+                      <option value="reading">{t.statusReading}</option>
+                      <option value="read">{t.statusRead}</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="relative">
-              <Filter className={`w-4 h-4 ${activeThemeConfig.textSecondaryClass} absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none`} />
-              <select
-                value={selectedAuthor}
-                onChange={(e) => setSelectedAuthor(e.target.value)}
-                className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
-              >
-                <option value="all">{t.allAuthors}</option>
-                {availableAuthors.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="relative">
-              <Filter className={`w-4 h-4 ${activeThemeConfig.textSecondaryClass} absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none`} />
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className={`w-full ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
-              >
-                <option value="all">Všechny stavy čtení</option>
-                <option value="unread">{t.statusUnread}</option>
-                <option value="reading">{t.statusReading}</option>
-                <option value="read">{t.statusRead}</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <button
               onClick={() => setIsExportModalOpen(true)}
               className={`px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} text-xs font-semibold rounded-xl transition flex items-center gap-2 shadow-md`}
@@ -383,68 +450,45 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                     <span className={`text-[10px] ${activeThemeConfig.textSecondaryClass} font-semibold`}>({booksInLetter.length})</span>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                     {booksInLetter.map((book) => (
                       <div
                         key={book.id || `${book.isbn}_${book.addedAt}`}
                         onClick={() => setSelectedBookForDetail(book)}
-                        className={`${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} hover:border-blue-500/50 cursor-pointer rounded-2xl p-4 sm:p-5 flex items-start justify-between gap-4 transition shadow-md group`}
+                        className={`${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} hover:border-blue-500/50 cursor-pointer rounded-2xl p-3 flex flex-col justify-between transition shadow-md group relative`}
                       >
-                        <BookCover coverUrl={book.coverUrl} title={book.title} noCoverText={t.noCover} activeThemeConfig={activeThemeConfig} />
+                        <div>
+                          <div className="relative mb-2.5">
+                            <BookCover coverUrl={book.coverUrl} title={book.title} noCoverText={t.noCover} activeThemeConfig={activeThemeConfig} />
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h3 className={`text-base sm:text-lg font-bold ${activeThemeConfig.textPrimaryClass} leading-snug break-words group-hover:text-blue-400 transition`}>
-                              {book.title}
-                            </h3>
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              {book.readingStatus === 'reading' && (
-                                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{t.statusReading}</span>
-                                </span>
-                              )}
-                              {book.readingStatus === 'read' && (
-                                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>{t.statusRead}</span>
-                                </span>
-                              )}
-                              <span className={`bg-black/20 border ${activeThemeConfig.borderClass} ${activeThemeConfig.accentClass} text-xs font-bold px-2.5 py-0.5 rounded-full`}>
-                                {book.quantity || 1} {t.pcs}
-                              </span>
-                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBookDeleteClick(book);
+                              }}
+                              title={t.deleteFromLibrary}
+                              className={`absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm text-slate-300 hover:text-rose-400 hover:bg-black/80 transition opacity-80 group-hover:opacity-100 shadow-sm`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
 
-                          <div className={`text-xs ${activeThemeConfig.textSecondaryClass} space-y-1 font-medium`}>
-                            {book.authors && (
-                              <p className={activeThemeConfig.textPrimaryClass}>
-                                <strong>{t.authorLabel}</strong> {book.authors}
-                              </p>
-                            )}
-                            {book.genre && (
-                              <p className={activeThemeConfig.accentClass}>
-                                <strong>{t.genreLabel}</strong> {book.genre}
-                              </p>
-                            )}
-                            <div className={`flex flex-wrap gap-x-4 gap-y-1 ${activeThemeConfig.textSecondaryClass}`}>
-                              {book.publishedYear && <p>{t.yearLabel} {book.publishedYear}</p>}
-                              {book.publisher && <p>{t.publisherLabel} {book.publisher}</p>}
-                              {book.isbn && <p className="font-mono opacity-80">{t.isbn}: {book.isbn}</p>}
-                            </div>
-                          </div>
+                          <h3
+                            title={book.title}
+                            className={`text-sm sm:text-base font-bold ${activeThemeConfig.textPrimaryClass} leading-tight line-clamp-2 group-hover:text-blue-400 transition mb-1`}
+                          >
+                            {book.title}
+                          </h3>
+
+                          {book.authors && (
+                            <p
+                              title={book.authors}
+                              className={`text-xs ${activeThemeConfig.textSecondaryClass} line-clamp-1 font-medium`}
+                            >
+                              {book.authors}
+                            </p>
+                          )}
                         </div>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBookDeleteClick(book);
-                          }}
-                          title={t.deleteFromLibrary}
-                          className={`${activeThemeConfig.textSecondaryClass} hover:text-rose-400 p-2 hover:bg-black/10 rounded-xl transition flex-shrink-0`}
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
                       </div>
                     ))}
                   </div>

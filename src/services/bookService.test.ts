@@ -29,6 +29,7 @@ const SAMPLE_KNIHOVNY_RESPONSE = {
       issns: [],
       cnb: 'cnb002163342',
       formats: ['0/BOOKS/'],
+      genres: ['Básně', 'Poezie'],
     },
   ],
   status: 'OK',
@@ -109,6 +110,7 @@ describe('Knihovny.cz API integration', () => {
         'Životy slavných a starých provensálských básníků, kteří žili v dobách hrabat z kraje Provença'
       );
       expect(book.authors).toBe('Jean de Nostredame');
+      expect(book.genre).toBe('Básně, Poezie');
       expect(book.publisher).toBe('Argo');
       expect(book.publishedYear).toBe('2011');
       expect(book.source).toBe('Knihovny.cz');

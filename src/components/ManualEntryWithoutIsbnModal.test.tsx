@@ -10,7 +10,7 @@ const mockLibraries: Library[] = [
 ];
 
 describe('ManualEntryWithoutIsbnModal', () => {
-  it('allows filling title, author, genre and submitting new book', () => {
+  it('allows filling title and author and submitting new book without manual genre', () => {
     const onSubmit = vi.fn();
     const onClose = vi.fn();
 
@@ -30,11 +30,10 @@ describe('ManualEntryWithoutIsbnModal', () => {
 
     const titleInput = screen.getByPlaceholderText('Válka s Mloky');
     const authorInput = screen.getByPlaceholderText('Karel Čapek');
-    const genreInput = screen.getByPlaceholderText('Sci-Fi, Román');
+    expect(screen.queryByPlaceholderText('Sci-Fi, Román')).toBeNull();
 
     fireEvent.change(titleInput, { target: { value: 'R.U.R.' } });
     fireEvent.change(authorInput, { target: { value: 'Karel Čapek' } });
-    fireEvent.change(genreInput, { target: { value: 'Divadelní hra' } });
 
     const submitBtn = screen.getByText('Přidat knihu do knihovny');
     fireEvent.click(submitBtn);
@@ -43,7 +42,6 @@ describe('ManualEntryWithoutIsbnModal', () => {
     expect(onSubmit.mock.calls[0][0]).toMatchObject({
       title: 'R.U.R.',
       authors: 'Karel Čapek',
-      genre: 'Divadelní hra',
       libraryId: 'lib1',
       readingStatus: 'unread',
     });
