@@ -41,7 +41,7 @@ export function exportToExcel(books: Book[], filename = 'knihovna.xlsx') {
   const data = books.map((b) => ({
     'Název': b.title,
     'Autor': b.authors || '',
-    'ISBN': b.isbn,
+    'ISBN': b.isbn || '',
     'Rok vydání': b.publishedYear || '',
     'Nakladatelství': b.publisher || '',
   }));
@@ -59,7 +59,7 @@ export function exportToCsv(books: Book[], filename = 'knihovna.csv') {
   const data = books.map((b) => ({
     'Název': b.title,
     'Autor': b.authors || '',
-    'ISBN': b.isbn,
+    'ISBN': b.isbn || '',
     'Rok vydání': b.publishedYear || '',
     'Nakladatelství': b.publisher || '',
   }));

@@ -12,6 +12,7 @@ const mockLibraries: Library[] = [
 
 const mockBooks: Book[] = [
   {
+    id: 'mock_lib_1',
     isbn: '9788000058825',
     title: 'Babička',
     authors: 'Božena Němcová',
@@ -20,6 +21,7 @@ const mockBooks: Book[] = [
     addedAt: 1,
   },
   {
+    id: 'mock_lib_2',
     isbn: '9788020452304',
     title: 'Čapek a jeho svět',
     authors: 'Josef Čapek',
@@ -28,6 +30,7 @@ const mockBooks: Book[] = [
     addedAt: 2,
   },
   {
+    id: 'mock_lib_3',
     isbn: '9788072037650',
     title: '1984',
     authors: 'George Orwell',
@@ -79,6 +82,7 @@ describe('LibraryView', () => {
   it('filters books by genre and author using single filter button', () => {
     const booksWithGenre: Book[] = [
       {
+        id: 'mock_genre_1',
         isbn: '111',
         title: 'Duna',
         authors: 'Frank Herbert',
@@ -88,6 +92,7 @@ describe('LibraryView', () => {
         addedAt: 1,
       },
       {
+        id: 'mock_genre_2',
         isbn: '222',
         title: 'Sherlock Holmes',
         authors: 'Arthur Conan Doyle',

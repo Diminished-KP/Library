@@ -12,6 +12,7 @@ describe('BatchReviewModal', () => {
 
   const sampleBooks: Book[] = [
     {
+      id: 'book_1',
       isbn: '9788000058825',
       title: 'Babička',
       authors: 'Božena Němcová',
@@ -23,6 +24,7 @@ describe('BatchReviewModal', () => {
       quantity: 1,
     },
     {
+      id: 'book_2',
       isbn: '9780140328721',
       title: 'Fantastic Mr Fox',
       authors: 'Roald Dahl',

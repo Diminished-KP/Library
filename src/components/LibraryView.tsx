@@ -20,6 +20,14 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
+export type SortOption =
+  | 'title_asc'
+  | 'title_desc'
+  | 'author_asc'
+  | 'author_desc'
+  | 'year_desc'
+  | 'year_asc';
+
 interface LibraryViewProps {
   books: Book[];
   libraries: Library[];
@@ -29,8 +37,10 @@ interface LibraryViewProps {
   onDeleteLibrary: (id: string) => void;
   onBackToMenu: () => void;
   onNavigateToScanner: () => void;
-  onDeleteBook: (isbn: string, libraryId: string, removeAll: boolean) => void;
+  onOpenManualEntryNoIsbn?: () => void;
+  onDeleteBook: (bookId: string, libraryId: string, removeAll: boolean) => void;
   onUpdateBook?: (updatedBook: Book) => void;
+  onDuplicateBook?: (book: Book) => void;
   onUpdateReadingStatus?: (book: Book, status: ReadingStatus) => void;
   t: Translations;
   currentLanguage?: Language;
@@ -73,8 +83,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onDeleteLibrary,
   onBackToMenu,
   onNavigateToScanner,
+  onOpenManualEntryNoIsbn,
   onDeleteBook,
   onUpdateBook,
+  onDuplicateBook,
   onUpdateReadingStatus,
   t,
   currentLanguage = 'cs',
@@ -84,7 +96,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
+  const [selectedPublisher, setSelectedPublisher] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('title_asc');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [selectedBookForDetail, setSelectedBookForDetail] = useState<Book | null>(null);
@@ -126,26 +141,60 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     return Array.from(set).sort();
   }, [libraryBooks]);
 
+  // Unique publishers for filter
+  const availablePublishers = useMemo(() => {
+    const set = new Set<string>();
+    libraryBooks.forEach((b) => {
+      if (b.publisher) {
+        b.publisher.split(',').forEach((p) => {
+          const trimmed = p.trim();
+          if (trimmed) set.add(trimmed);
+        });
+      }
+    });
+    return Array.from(set).sort();
+  }, [libraryBooks]);
+
+  // Unique publication years for filter
+  const availableYears = useMemo(() => {
+    const set = new Set<string>();
+    libraryBooks.forEach((b) => {
+      if (b.publishedYear) {
+        const trimmed = b.publishedYear.trim();
+        if (trimmed) set.add(trimmed);
+      }
+    });
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [libraryBooks]);
+
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (selectedGenre !== 'all') count++;
     if (selectedAuthor !== 'all') count++;
+    if (selectedPublisher !== 'all') count++;
+    if (selectedYear !== 'all') count++;
     if (selectedStatus !== 'all') count++;
     return count;
-  }, [selectedGenre, selectedAuthor, selectedStatus]);
+  }, [selectedGenre, selectedAuthor, selectedPublisher, selectedYear, selectedStatus]);
 
   const handleResetFilters = () => {
     setSelectedGenre('all');
     setSelectedAuthor('all');
+    setSelectedPublisher('all');
+    setSelectedYear('all');
     setSelectedStatus('all');
+    setSortBy('title_asc');
   };
 
   const filteredBooks = useMemo(() => {
-    return libraryBooks.filter((b) => {
+    const term = searchTerm.toLowerCase();
+    const result = libraryBooks.filter((b) => {
       const matchesSearch =
-        b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (b.authors && b.authors.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        b.isbn.includes(searchTerm);
+        !term ||
+        b.title.toLowerCase().includes(term) ||
+        (b.authors && b.authors.toLowerCase().includes(term)) ||
+        (b.publisher && b.publisher.toLowerCase().includes(term)) ||
+        (b.isbn && b.isbn.toLowerCase().includes(term));
 
       const matchesGenre =
         selectedGenre === 'all' ||
@@ -155,12 +204,60 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         selectedAuthor === 'all' ||
         (b.authors && b.authors.toLowerCase().includes(selectedAuthor.toLowerCase()));
 
+      const matchesPublisher =
+        selectedPublisher === 'all' ||
+        (b.publisher && b.publisher.toLowerCase().includes(selectedPublisher.toLowerCase()));
+
+      const matchesYear =
+        selectedYear === 'all' ||
+        (b.publishedYear && b.publishedYear === selectedYear);
+
       const status = b.readingStatus || 'unread';
       const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
 
-      return matchesSearch && matchesGenre && matchesAuthor && matchesStatus;
+      return (
+        matchesSearch &&
+        matchesGenre &&
+        matchesAuthor &&
+        matchesPublisher &&
+        matchesYear &&
+        matchesStatus
+      );
     });
-  }, [libraryBooks, searchTerm, selectedGenre, selectedAuthor, selectedStatus]);
+
+    // Sorting
+    return result.sort((a, b) => {
+      if (sortBy === 'title_asc') {
+        return a.title.localeCompare(b.title, currentLanguage);
+      }
+      if (sortBy === 'title_desc') {
+        return b.title.localeCompare(a.title, currentLanguage);
+      }
+      if (sortBy === 'author_asc') {
+        return (a.authors || '').localeCompare(b.authors || '', currentLanguage);
+      }
+      if (sortBy === 'author_desc') {
+        return (b.authors || '').localeCompare(a.authors || '', currentLanguage);
+      }
+      if (sortBy === 'year_desc') {
+        return (b.publishedYear || '').localeCompare(a.publishedYear || '');
+      }
+      if (sortBy === 'year_asc') {
+        return (a.publishedYear || '').localeCompare(b.publishedYear || '');
+      }
+      return 0;
+    });
+  }, [
+    libraryBooks,
+    searchTerm,
+    selectedGenre,
+    selectedAuthor,
+    selectedPublisher,
+    selectedYear,
+    selectedStatus,
+    sortBy,
+    currentLanguage,
+  ]);
 
   // Alphabet sidebar letters
   const alphabetLetters = useMemo(() => {
@@ -211,7 +308,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     if ((book.quantity || 1) > 1) {
       setDeletingBook(book);
     } else {
-      onDeleteBook(book.isbn, book.libraryId, true);
+      onDeleteBook(book.id || book.isbn || '', book.libraryId, true);
     }
   };
 
@@ -230,17 +327,27 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={onNavigateToScanner}
-            className={`px-4 py-2 ${activeThemeConfig.buttonPrimaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-2 shadow-lg`}
+            className={`px-3 sm:px-4 py-2 ${activeThemeConfig.buttonPrimaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow-lg`}
           >
             <Scan className="w-4 h-4" />
             <span>{t.addBooksToLibrary}</span>
           </button>
+          {onOpenManualEntryNoIsbn && (
+            <button
+              onClick={onOpenManualEntryNoIsbn}
+              className={`px-3 sm:px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md`}
+              title={t.manualAddFromLibrary}
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t.manualAddFromLibrary}</span>
+            </button>
+          )}
           <button
             onClick={onOpenAddLibraryModal}
-            className={`px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-2 shadow-md`}
+            className={`px-3 sm:px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md`}
           >
             <Plus className="w-4 h-4" />
-            <span>{t.addLibrary}</span>
+            <span className="hidden sm:inline">{t.addLibrary}</span>
           </button>
         </div>
       </div>
@@ -335,14 +442,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               {/* Single Filter Dropdown Menu */}
               {isFilterOpen && (
                 <div
-                  className={`absolute left-0 mt-2 w-72 sm:w-80 ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-2xl p-4 shadow-2xl z-30 space-y-3.5 animate-in fade-in duration-150`}
+                  className={`absolute left-0 mt-2 w-72 sm:w-80 ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-2xl p-4 shadow-2xl z-30 space-y-3.5 animate-in fade-in duration-150 max-h-[80vh] overflow-y-auto`}
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-white/10">
                     <span className={`text-xs font-bold ${activeThemeConfig.textPrimaryClass} flex items-center gap-1.5`}>
                       <Filter className="w-3.5 h-3.5" />
                       {t.filters}
                     </span>
-                    {activeFiltersCount > 0 && (
+                    {(activeFiltersCount > 0 || sortBy !== 'title_asc') && (
                       <button
                         onClick={handleResetFilters}
                         className={`text-[11px] ${activeThemeConfig.accentClass} hover:underline flex items-center gap-1 font-semibold`}
@@ -351,6 +458,25 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                         <span>{t.resetFilters}</span>
                       </button>
                     )}
+                  </div>
+
+                  {/* Sort Order */}
+                  <div>
+                    <label className={`text-[11px] font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                      {t.sortBy}
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+                    >
+                      <option value="title_asc">{t.sortTitleAsc}</option>
+                      <option value="title_desc">{t.sortTitleDesc}</option>
+                      <option value="author_asc">{t.sortAuthorAsc}</option>
+                      <option value="author_desc">{t.sortAuthorDesc}</option>
+                      <option value="year_desc">{t.sortYearDesc}</option>
+                      <option value="year_asc">{t.sortYearAsc}</option>
+                    </select>
                   </div>
 
                   {/* Genre Filter */}
@@ -386,6 +512,44 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                       {availableAuthors.map((a) => (
                         <option key={a} value={a}>
                           {a}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Publisher Filter */}
+                  <div>
+                    <label className={`text-[11px] font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                      {t.filterByPublisher}
+                    </label>
+                    <select
+                      value={selectedPublisher}
+                      onChange={(e) => setSelectedPublisher(e.target.value)}
+                      className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+                    >
+                      <option value="all">{t.allPublishers}</option>
+                      {availablePublishers.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Publication Year Filter */}
+                  <div>
+                    <label className={`text-[11px] font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                      {t.filterByYear}
+                    </label>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 font-medium`}
+                    >
+                      <option value="all">{t.allYears}</option>
+                      {availableYears.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
                         </option>
                       ))}
                     </select>
@@ -453,7 +617,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                     {booksInLetter.map((book) => (
                       <div
-                        key={book.id || `${book.isbn}_${book.addedAt}`}
+                        key={book.id || `${book.isbn || 'no_isbn'}_${book.addedAt}`}
                         onClick={() => setSelectedBookForDetail(book)}
                         className={`${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} hover:border-blue-500/50 cursor-pointer rounded-2xl p-3 flex flex-col justify-between transition shadow-md group relative`}
                       >
@@ -548,6 +712,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             }
             setSelectedBookForDetail(updatedBook);
           }}
+          onDuplicateBook={(bookToDup) => {
+            if (onDuplicateBook) {
+              onDuplicateBook(bookToDup);
+            }
+            setSelectedBookForDetail(null);
+          }}
           onDeleteBook={(book) => {
             handleBookDeleteClick(book);
             setSelectedBookForDetail(null);
@@ -564,8 +734,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           bookTitle={deletingBook.title}
           quantity={deletingBook.quantity || 1}
           onClose={() => setDeletingBook(null)}
-          onDecrement={() => onDeleteBook(deletingBook.isbn, deletingBook.libraryId, false)}
-          onDeleteAll={() => onDeleteBook(deletingBook.isbn, deletingBook.libraryId, true)}
+          onDecrement={() => onDeleteBook(deletingBook.id || deletingBook.isbn || '', deletingBook.libraryId, false)}
+          onDeleteAll={() => onDeleteBook(deletingBook.id || deletingBook.isbn || '', deletingBook.libraryId, true)}
           t={t}
           currentTheme={currentTheme}
         />

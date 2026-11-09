@@ -82,14 +82,20 @@ export default function App() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_BOOKS);
       if (saved) {
-        const parsed: Book[] = JSON.parse(saved);
-        return parsed.map((b, idx) => ({
-          ...b,
-          id: b.id || `book_legacy_${idx}_${b.isbn}`,
-          libraryId: b.libraryId || 'default',
-          quantity: typeof b.quantity === 'number' ? b.quantity : 1,
-          readingStatus: b.readingStatus || 'unread',
-        }));
+        const parsed: any[] = JSON.parse(saved);
+        return parsed.map((b, idx) => {
+          const rawIsbn = b.isbn ? String(b.isbn).trim() : '';
+          const hasRealIsbn = rawIsbn && !rawIsbn.startsWith('NO_ISBN_');
+          return {
+            ...b,
+            id: b.id || `book_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 7)}`,
+            isbn: hasRealIsbn ? rawIsbn : (rawIsbn.startsWith('NO_ISBN_') ? undefined : (rawIsbn || undefined)),
+            libraryId: b.libraryId || 'default',
+            quantity: typeof b.quantity === 'number' ? b.quantity : 1,
+            readingStatus: b.readingStatus || 'unread',
+            description: b.description || undefined,
+          } as Book;
+        });
       }
       return [];
     } catch {
@@ -103,6 +109,7 @@ export default function App() {
 
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isManualNoIsbnModalOpen, setIsManualNoIsbnModalOpen] = useState(false);
+  const [initialManualIsbn, setInitialManualIsbn] = useState<string>('');
   const [isAddLibraryModalOpen, setIsAddLibraryModalOpen] = useState(false);
   const [scannedBook, setScannedBook] = useState<Book | null>(null);
   const [isScannerProcessing, setIsScannerProcessing] = useState(false);
@@ -271,6 +278,9 @@ export default function App() {
         if (!fetchResult.success) {
           showNotification(t[fetchResult.message === 'Kniha s tímto ISBN nebyla nalezena v dostupné databázi.' ? 'isbnNotFound' : 'isbnFetchError'] || fetchResult.message);
           setResumeTrigger((prev) => prev + 1);
+          // If not found online, offer manual details entry pre-filled with this ISBN
+          setInitialManualIsbn(cleanIsbn);
+          setIsManualNoIsbnModalOpen(true);
           return;
         }
 
@@ -295,7 +305,11 @@ export default function App() {
     if (scannedBook) {
       setBooks((prev) => {
         const existingIdx = prev.findIndex(
-          (b) => b.isbn === scannedBook.isbn && b.isbn.trim() !== '' && !b.isbn.startsWith('NO_ISBN_') && b.libraryId === scannedBook.libraryId
+          (b) =>
+            b.isbn &&
+            scannedBook.isbn &&
+            b.isbn === scannedBook.isbn &&
+            b.libraryId === scannedBook.libraryId
         );
         if (existingIdx >= 0) {
           const updated = [...prev];
@@ -320,25 +334,27 @@ export default function App() {
 
   const handleUpdateBook = (updatedBook: Book) => {
     setBooks((prev) =>
-      prev.map((b) => {
-        if (b.id && updatedBook.id && b.id === updatedBook.id) {
-          return updatedBook;
-        }
-        if (b.isbn === updatedBook.isbn && b.libraryId === updatedBook.libraryId) {
-          return updatedBook;
-        }
-        return b;
-      })
+      prev.map((b) => (b.id === updatedBook.id ? updatedBook : b))
     );
+    showNotification(t.bookUpdatedSuccess);
+  };
+
+  const handleDuplicateBook = (bookToDuplicate: Book) => {
+    const timestamp = Date.now();
+    const duplicate: Book = {
+      ...bookToDuplicate,
+      id: `book_${timestamp}_${Math.random().toString(36).substring(2, 9)}`,
+      addedAt: timestamp,
+      quantity: 1,
+    };
+    setBooks((prev) => [duplicate, ...prev]);
+    showNotification(t.duplicateCreatedSuccess);
   };
 
   const handleUpdateReadingStatus = (targetBook: Book, status: ReadingStatus) => {
     setBooks((prev) =>
       prev.map((b) => {
-        if (b.id && targetBook.id && b.id === targetBook.id) {
-          return { ...b, readingStatus: status };
-        }
-        if (b.isbn === targetBook.isbn && b.libraryId === targetBook.libraryId) {
+        if (b.id === targetBook.id) {
           return { ...b, readingStatus: status };
         }
         return b;
@@ -351,18 +367,19 @@ export default function App() {
     setResumeTrigger((prev) => prev + 1);
   };
 
-  const handleDeleteBook = (isbn: string, libraryId: string, removeAll: boolean) => {
+  const handleDeleteBook = (bookIdOrIsbn: string, libraryId: string, removeAll: boolean) => {
     setBooks((prev) => {
-      const existing = prev.find((b) => b.isbn === isbn && b.libraryId === libraryId);
+      // Find book primarily by id, fallback to isbn and libraryId for backward compat
+      const existing = prev.find(
+        (b) => b.id === bookIdOrIsbn || (b.isbn === bookIdOrIsbn && b.libraryId === libraryId)
+      );
       if (!existing) return prev;
 
       if (removeAll || existing.quantity <= 1) {
-        return prev.filter((b) => !(b.isbn === isbn && b.libraryId === libraryId));
+        return prev.filter((b) => b.id !== existing.id);
       } else {
         return prev.map((b) =>
-          b.isbn === isbn && b.libraryId === libraryId
-            ? { ...b, quantity: b.quantity - 1 }
-            : b
+          b.id === existing.id ? { ...b, quantity: b.quantity - 1 } : b
         );
       }
     });
@@ -491,8 +508,13 @@ export default function App() {
             onDeleteLibrary={handleDeleteLibrary}
             onBackToMenu={() => setCurrentView('menu')}
             onNavigateToScanner={() => setCurrentView('scanner')}
+            onOpenManualEntryNoIsbn={() => {
+              setInitialManualIsbn('');
+              setIsManualNoIsbnModalOpen(true);
+            }}
             onDeleteBook={handleDeleteBook}
             onUpdateBook={handleUpdateBook}
+            onDuplicateBook={handleDuplicateBook}
             onUpdateReadingStatus={handleUpdateReadingStatus}
             t={t}
             currentLanguage={language}
@@ -509,6 +531,11 @@ export default function App() {
           setIsManualModalOpen(false);
           handleIsbnProcess(isbn);
         }}
+        onSwitchToManualDetails={(failedIsbn) => {
+          setIsManualModalOpen(false);
+          setInitialManualIsbn(failedIsbn);
+          setIsManualNoIsbnModalOpen(true);
+        }}
         libraries={libraries}
         selectedLibraryId={activeLibraryId}
         onSelectLibrary={setActiveLibraryId}
@@ -519,7 +546,11 @@ export default function App() {
       {/* Manual Entry Without ISBN Modal */}
       <ManualEntryWithoutIsbnModal
         isOpen={isManualNoIsbnModalOpen}
-        onClose={() => setIsManualNoIsbnModalOpen(false)}
+        initialIsbn={initialManualIsbn}
+        onClose={() => {
+          setIsManualNoIsbnModalOpen(false);
+          setInitialManualIsbn('');
+        }}
         onSubmit={handleAddCustomBook}
         libraries={libraries}
         selectedLibraryId={activeLibraryId}

@@ -7,6 +7,7 @@ import { X, BookPlus, Library as LibraryIcon } from 'lucide-react';
 
 interface ManualEntryWithoutIsbnModalProps {
   isOpen: boolean;
+  initialIsbn?: string;
   onClose: () => void;
   onSubmit: (book: Book) => void;
   libraries: Library[];
@@ -18,6 +19,7 @@ interface ManualEntryWithoutIsbnModalProps {
 
 export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalProps> = ({
   isOpen,
+  initialIsbn = '',
   onClose,
   onSubmit,
   libraries,
@@ -32,27 +34,38 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
   const [authors, setAuthors] = useState('');
   const [publishedYear, setPublishedYear] = useState('');
   const [publisher, setPublisher] = useState('');
-  const [isbn, setIsbn] = useState('');
+  const [description, setDescription] = useState('');
+  const [genre, setGenre] = useState('');
+  const [isbn, setIsbn] = useState(initialIsbn);
+  const [prevInitialIsbn, setPrevInitialIsbn] = useState(initialIsbn);
   const [coverUrl, setCoverUrl] = useState('');
   const [error, setError] = useState('');
+
+  // Synchronize initialIsbn when modal is re-opened with a new initial ISBN
+  if (initialIsbn !== prevInitialIsbn) {
+    setPrevInitialIsbn(initialIsbn);
+    setIsbn(initialIsbn);
+  }
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !authors.trim()) {
-      setError('Vyplňte prosím název knihy a autora.');
+    if (!title.trim()) {
+      setError('Vyplňte prosím název knihy.');
       return;
     }
 
     const timestamp = Date.now();
-    const cleanIsbn = isbn.trim() || `NO_ISBN_${timestamp}`;
+    const cleanIsbn = isbn.trim() || undefined;
 
     const newBook: Book = {
       id: `book_${timestamp}_${Math.random().toString(36).substring(2, 9)}`,
       isbn: cleanIsbn,
       title: title.trim(),
-      authors: authors.trim(),
+      authors: authors.trim() || undefined,
+      description: description.trim() || undefined,
+      genre: genre.trim() || undefined,
       readingStatus: 'unread',
       publishedYear: publishedYear.trim() || undefined,
       publisher: publisher.trim() || undefined,
@@ -69,6 +82,8 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
     setAuthors('');
     setPublishedYear('');
     setPublisher('');
+    setDescription('');
+    setGenre('');
     setIsbn('');
     setCoverUrl('');
     setError('');
@@ -134,15 +149,12 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
 
           <div>
             <label className={`text-xs font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
-              {t.bookAuthorLabel}
+              {t.bookAuthorLabel.replace('*', '').trim()} (volitelné)
             </label>
             <input
               type="text"
               value={authors}
-              onChange={(e) => {
-                setAuthors(e.target.value);
-                if (error) setError('');
-              }}
+              onChange={(e) => setAuthors(e.target.value)}
               placeholder="Karel Čapek"
               className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} placeholder:${activeThemeConfig.textSecondaryClass} text-sm rounded-xl p-3 outline-none focus:border-blue-500`}
             />
@@ -175,16 +187,43 @@ export const ManualEntryWithoutIsbnModal: React.FC<ManualEntryWithoutIsbnModalPr
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={`text-xs font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                {t.bookGenreLabel}
+              </label>
+              <input
+                type="text"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                placeholder="Sci-Fi, Román"
+                className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} placeholder:${activeThemeConfig.textSecondaryClass} text-sm rounded-xl p-3 outline-none focus:border-blue-500`}
+              />
+            </div>
+            <div>
+              <label className={`text-xs font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
+                {t.bookIsbnOptionalLabel}
+              </label>
+              <input
+                type="text"
+                value={isbn}
+                onChange={(e) => setIsbn(e.target.value)}
+                placeholder="Nepovinné ISBN"
+                className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} placeholder:${activeThemeConfig.textSecondaryClass} text-sm rounded-xl p-3 outline-none focus:border-blue-500 font-mono`}
+              />
+            </div>
+          </div>
+
           <div>
             <label className={`text-xs font-bold ${activeThemeConfig.textSecondaryClass} mb-1 block`}>
-              {t.bookIsbnOptionalLabel}
+              {t.bookDescriptionLabel}
             </label>
-            <input
-              type="text"
-              value={isbn}
-              onChange={(e) => setIsbn(e.target.value)}
-              placeholder="Nepovinné ISBN"
-              className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} placeholder:${activeThemeConfig.textSecondaryClass} text-sm rounded-xl p-3 outline-none focus:border-blue-500 font-mono`}
+            <textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Stručný obsah knihy, stav vazby, poznámky..."
+              className={`w-full ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} placeholder:${activeThemeConfig.textSecondaryClass} text-sm rounded-xl p-3 outline-none focus:border-blue-500 resize-none`}
             />
           </div>
 

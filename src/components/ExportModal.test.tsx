@@ -16,6 +16,7 @@ import { exportToPdf, exportToExcel, exportToCsv } from '../services/exportServi
 
 const mockBooks: Book[] = [
   {
+    id: 'mock_1',
     isbn: '9788025703670',
     title: 'Test Book 1',
     authors: 'Test Author',
