@@ -177,6 +177,29 @@ export interface Translations {
   deleteBookTitle: string;
   deleteBookConfirmOne: string;
   deleteBookConfirmAll: string;
+
+  // New features: Edit, Duplicate, Book Description, Sort & Filters
+  editBook: string;
+  duplicateBook: string;
+  bookDescriptionLabel: string;
+  bookDescription: string;
+  sortBy: string;
+  sortTitleAsc: string;
+  sortTitleDesc: string;
+  sortAuthorAsc: string;
+  sortAuthorDesc: string;
+  sortYearDesc: string;
+  sortYearAsc: string;
+  filterByPublisher: string;
+  allPublishers: string;
+  filterByYear: string;
+  allYears: string;
+  duplicateCreatedSuccess: string;
+  bookUpdatedSuccess: string;
+  manualAddFromLibrary: string;
+  isbnInvalidError: string;
+  isbnSearchFailedPrompt: string;
+  addManuallyWithIsbn: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -346,6 +369,28 @@ export const translations: Record<Language, Translations> = {
     deleteBookTitle: 'Odstranit knihu',
     deleteBookConfirmOne: 'Odebrat 1 kus',
     deleteBookConfirmAll: 'Smazat všechny kusy',
+
+    editBook: 'Upravit knihu',
+    duplicateBook: 'Duplikovat knihu',
+    bookDescriptionLabel: 'Popis knihy (volitelné)',
+    bookDescription: 'Popis',
+    sortBy: 'Řazení',
+    sortTitleAsc: 'Název (A-Z)',
+    sortTitleDesc: 'Název (Z-A)',
+    sortAuthorAsc: 'Autor (A-Z)',
+    sortAuthorDesc: 'Autor (Z-A)',
+    sortYearDesc: 'Rok (nejnovější)',
+    sortYearAsc: 'Rok (nejstarší)',
+    filterByPublisher: 'Nakladatelství',
+    allPublishers: 'Všechna nakladatelství',
+    filterByYear: 'Rok vydání',
+    allYears: 'Všechny roky',
+    duplicateCreatedSuccess: 'Kopie knihy byla úspěšně vytvořena.',
+    bookUpdatedSuccess: 'Údaje o knize byly aktualizovány.',
+    manualAddFromLibrary: 'Přidat knihu ručně',
+    isbnInvalidError: 'Zadané ISBN nemá platný formát nebo kontrolní číslici.',
+    isbnSearchFailedPrompt: 'Kniha nebyla v online databázi nalezena. Chcete ji zadat ručně?',
+    addManuallyWithIsbn: 'Zadat údaje ručně',
   },
 
   en: {
@@ -514,6 +559,28 @@ export const translations: Record<Language, Translations> = {
     deleteBookTitle: 'Remove Book',
     deleteBookConfirmOne: 'Remove 1 copy',
     deleteBookConfirmAll: 'Remove all copies',
+
+    editBook: 'Edit book',
+    duplicateBook: 'Duplicate book',
+    bookDescriptionLabel: 'Book description (optional)',
+    bookDescription: 'Description',
+    sortBy: 'Sort by',
+    sortTitleAsc: 'Title (A-Z)',
+    sortTitleDesc: 'Title (Z-A)',
+    sortAuthorAsc: 'Author (A-Z)',
+    sortAuthorDesc: 'Author (Z-A)',
+    sortYearDesc: 'Year (newest)',
+    sortYearAsc: 'Year (oldest)',
+    filterByPublisher: 'Publisher',
+    allPublishers: 'All publishers',
+    filterByYear: 'Publication year',
+    allYears: 'All years',
+    duplicateCreatedSuccess: 'Book duplicate was created successfully.',
+    bookUpdatedSuccess: 'Book details were updated successfully.',
+    manualAddFromLibrary: 'Add book manually',
+    isbnInvalidError: 'The entered ISBN does not have a valid format or checksum.',
+    isbnSearchFailedPrompt: 'The book was not found online. Would you like to enter details manually?',
+    addManuallyWithIsbn: 'Enter details manually',
   },
 
   es: {
@@ -682,6 +749,28 @@ export const translations: Record<Language, Translations> = {
     deleteBookTitle: 'Eliminar libro',
     deleteBookConfirmOne: 'Eliminar 1 copia',
     deleteBookConfirmAll: 'Eliminar todas las copias',
+
+    editBook: 'Editar libro',
+    duplicateBook: 'Duplicar libro',
+    bookDescriptionLabel: 'Descripción del libro (opcional)',
+    bookDescription: 'Descripción',
+    sortBy: 'Ordenar por',
+    sortTitleAsc: 'Título (A-Z)',
+    sortTitleDesc: 'Título (Z-A)',
+    sortAuthorAsc: 'Autor (A-Z)',
+    sortAuthorDesc: 'Autor (Z-A)',
+    sortYearDesc: 'Año (más reciente)',
+    sortYearAsc: 'Año (más antiguo)',
+    filterByPublisher: 'Editorial',
+    allPublishers: 'Todas las editoriales',
+    filterByYear: 'Año de publicación',
+    allYears: 'Todos los años',
+    duplicateCreatedSuccess: 'La copia del libro fue creada con éxito.',
+    bookUpdatedSuccess: 'Los datos del libro fueron actualizados.',
+    manualAddFromLibrary: 'Añadir libro manualmente',
+    isbnInvalidError: 'El ISBN ingresado no tiene un formato o dígito de control válido.',
+    isbnSearchFailedPrompt: 'El libro no fue encontrado en línea. ¿Deseas ingresar los datos manualmente?',
+    addManuallyWithIsbn: 'Ingresar datos manualmente',
   },
 };
 

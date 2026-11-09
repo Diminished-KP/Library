@@ -9,7 +9,7 @@ interface BatchReviewModalProps {
   isOpen: boolean;
   books: Book[];
   libraryName?: string;
-  onRemoveBook: (isbn: string) => void;
+  onRemoveBook: (identifier: string) => void;
   onSaveAll: () => void;
   onDiscardAll: () => void;
   t: Translations;
@@ -84,7 +84,7 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
           <div className="flex-1 overflow-y-auto space-y-3 my-2 pr-1">
             {books.map((book) => (
               <div
-                key={book.isbn}
+                key={book.id || book.isbn || `${book.title}_${book.addedAt}`}
                 className={`${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} rounded-2xl p-3 sm:p-4 flex items-start gap-3 transition`}
               >
                 <BookCover coverUrl={book.coverUrl} title={book.title} noCoverText={t.noCover} activeThemeConfig={activeThemeConfig} />
@@ -98,13 +98,13 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
                     <div className={`flex flex-wrap gap-x-3 text-[11px] ${activeThemeConfig.textSecondaryClass}`}>
                       {book.publishedYear && <span>{t.yearLabel} {book.publishedYear}</span>}
                       {book.publisher && <span>{t.publisherLabel} {book.publisher}</span>}
-                      <span className="font-mono">ISBN: {book.isbn}</span>
+                      {book.isbn && <span className="font-mono">ISBN: {book.isbn}</span>}
                     </div>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => onRemoveBook(book.isbn)}
+                  onClick={() => onRemoveBook(book.id || book.isbn || '')}
                   title={t.delete}
                   className={`${activeThemeConfig.textSecondaryClass} hover:text-rose-400 p-2 hover:bg-black/10 rounded-xl transition flex-shrink-0`}
                 >

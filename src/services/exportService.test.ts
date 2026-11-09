@@ -31,6 +31,7 @@ vi.mock('xlsx', () => ({
 describe('exportService', () => {
   const sampleBooks: Book[] = [
     {
+      id: 'book_export_service_1',
       isbn: '9788000058825',
       title: 'Babička',
       authors: 'Božena Němcová',

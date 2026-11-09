@@ -8,10 +8,11 @@ export interface Library {
 export type ReadingStatus = 'unread' | 'reading' | 'read';
 
 export interface Book {
-  id?: string;
-  isbn: string;
+  id: string;
+  isbn?: string;
   title: string;
   authors?: string;
+  description?: string;
   genre?: string;
   readingStatus?: ReadingStatus;
   publishedYear?: string;
