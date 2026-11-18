@@ -1,44 +1,42 @@
-# Knihovnický Skener & Osobní Knihovna
+# Knihovnický skener a osobní knihovna
 
-Aplikace pro mobilní telefony (Android / iOS) a webové prohlížeče určená pro knihovníky a čtenáře. Umožňuje skenovat čárové kódy knih a ISBN čísla pomocí fotoaparátu mobilu nebo ručního zadání, automaticky dohledává informace o knihách a ukládá je do osobní knihovny.
+Mobilní webová aplikace pro knihovníky a čtenáře. Umožňuje skenovat čárové kódy knih, rozpoznávat vytištěná ISBN pomocí fotoaparátu a přidávat knihy ručně. Údaje o knihách lze vyhledat v katalogu Knihovny.cz a doplňkově ve službách Google Books a Open Library.
 
 ## Funkce
-- 📱 **Mobilní skener čárových kódů** (přímý přístup k fotoaparátu telefonu v prohlížeči)
-- ⌨️ **Ruční zadání ISBN**
-- 🔍 **Vícezdrojové vyhledaávání:** Knihovny.cz ➔ Google Books API ➔ Open Library API
-- 📚 **Přehledná knihovna:** Seznam uložených knih s názvem, autorem, rokem vydání a nakladatelstvím
-- 🗑️ **Správa knihovny:** Možnost mazání a vyhledávání v knihovně
-- 🌙 **Moderní dark minimalistické UI** v tmavě modrých tónech
-- ⚡ **Běh bez databáze:** Všechna data jsou uložena přímo v prohlížeči zařízením uživatele (`localStorage`)
-- 🌐 **Připraveno pro GitHub Pages**
 
----
+- Skenování čárových kódů fotoaparátem telefonu.
+- Rozpoznávání vytištěného ISBN pomocí OCR a ruční zadání ISBN.
+- Ruční přidání knihy bez ISBN.
+- Ukládání knih a knihoven v prohlížeči pomocí `localStorage`; aplikace nemá backend.
+- Správa knih včetně úprav, duplikování, mazání, filtrování, řazení a evidence množství a stavu čtení.
+- Export knih do PDF, Excelu a CSV.
+- Český, anglický a španělský jazyk a osm barevných motivů.
+- Nasazení na GitHub Pages přes GitHub Actions.
 
-## Jak spustit lokálně
+## Spuštění lokálně
 
 1. Nainstalujte závislosti:
+
    ```bash
-   npm install
+   npm ci
    ```
 
 2. Spusťte vývojový server:
+
    ```bash
    npm run dev
    ```
 
-3. Spusťte testy:
+3. Pro vytvoření produkční verze použijte:
+
    ```bash
-   npm test
+   npm run build
    ```
 
----
+Testy spustíte příkazem `npm test` a kontrolu kódu příkazem `npm run lint`.
 
-## Nastavení na GitHubu (GitHub Pages)
+## Nasazení na GitHub Pages
 
-Aplikace je navržena k přímému hostování na **GitHub Pages**:
+Workflow v `.github/workflows/deploy.yml` sestaví a publikuje aplikaci při pushi do větve `main` nebo `master`. Nasazení lze spustit také ručně z GitHub Actions. V nastavení repozitáře musí být GitHub Pages nastavené na použití GitHub Actions.
 
-1. Vložte kód do svého GitHub repozitáře.
-2. V nastavení repozitáře (**Settings ➔ Pages**):
-   - V sekci **Build and deployment** nastavte **Source** na **GitHub Actions**.
-3. Při každém pushnutí do větve `main` (nebo `master`) automatická workflow v `.github/workflows/deploy.yml` sestaví aplikaci a publikuje ji na vašem GitHub Pages webu.
-4. Stránku otevřete na svém mobilním telefonu (Android/iOS) přes HTTPS v prohlížeči Chrome nebo Firefox a můžete ihned skenovat knížky fotoaparátem!
+Pro skenování na telefonu otevřete publikovanou stránku přes HTTPS a povolte jí přístup ke kameře. Knihy a nastavení se ukládají pouze v prohlížeči daného zařízení.
