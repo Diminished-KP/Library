@@ -127,6 +127,10 @@ export interface Translations {
   addToLibraryButton: string;
   discardButton: string;
   batchReviewSub: string;
+  bookAlreadyInLibrary: string;
+  quantityAfterAdding: string;
+  uniqueTitlesCount: string;
+  totalCopiesCount: string;
   chooseExportFormat: string;
   copyToClipboard: string;
   downloadFile: string;
@@ -200,6 +204,7 @@ export interface Translations {
   isbnInvalidError: string;
   isbnSearchFailedPrompt: string;
   addManuallyWithIsbn: string;
+  storageSaveError: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -298,7 +303,7 @@ export const translations: Record<Language, Translations> = {
     singleScanning: 'Jednotlivé skenování',
     batchScanning: 'Hromadné skenování',
     startingCamera: 'Spouštím skener fotoaparátu...',
-    cameraError: 'Nedařilo se spustit fotoaparát. Povolte prosím přístup k fotoaparátu v prohlížeči.',
+    cameraError: 'Fotoaparát se nepodařilo spustit. Povolte přístup ke kameře v nastavení prohlížeče a otevřete stránku přes HTTPS.',
     finishScanning: 'Dokončit skenování',
     scannerProcessing: 'Zpracovávám...',
     scannerReady: 'Připraveno ke skenování',
@@ -321,6 +326,10 @@ export const translations: Record<Language, Translations> = {
     addToLibraryButton: 'Přidat do knihovny',
     discardButton: 'Zahodit',
     batchReviewSub: 'Naskenované knihy k uložení',
+    bookAlreadyInLibrary: 'Tento titul už v knihovně máte.',
+    quantityAfterAdding: 'Po přidání celkem:',
+    uniqueTitlesCount: 'Různých titulů',
+    totalCopiesCount: 'Celkem kusů',
     chooseExportFormat: 'Vyberte formát pro export:',
     copyToClipboard: 'Kopírovat do schránky',
     downloadFile: 'Stáhnout soubor',
@@ -391,6 +400,7 @@ export const translations: Record<Language, Translations> = {
     isbnInvalidError: 'Zadané ISBN nemá platný formát nebo kontrolní číslici.',
     isbnSearchFailedPrompt: 'Kniha nebyla v online databázi nalezena. Chcete ji zadat ručně?',
     addManuallyWithIsbn: 'Zadat údaje ručně',
+    storageSaveError: 'Prohlížeč neuložil změny. Před obnovením stránky nebo zavřením okna exportujte knihovnu, jinak se mohou ztratit.',
   },
 
   en: {
@@ -488,7 +498,7 @@ export const translations: Record<Language, Translations> = {
     singleScanning: 'Single Scanning',
     batchScanning: 'Batch Scanning',
     startingCamera: 'Starting camera scanner...',
-    cameraError: 'Failed to start camera. Please grant camera access in your browser.',
+    cameraError: 'The camera could not start. Allow camera access in your browser settings and open this page over HTTPS.',
     finishScanning: 'Finish scanning',
     scannerProcessing: 'Processing...',
     scannerReady: 'Ready to scan',
@@ -511,6 +521,10 @@ export const translations: Record<Language, Translations> = {
     addToLibraryButton: 'Add to Library',
     discardButton: 'Discard',
     batchReviewSub: 'Scanned books to save',
+    bookAlreadyInLibrary: 'This title is already in this library.',
+    quantityAfterAdding: 'Total after adding:',
+    uniqueTitlesCount: 'Unique titles',
+    totalCopiesCount: 'Total copies',
     chooseExportFormat: 'Choose export format:',
     copyToClipboard: 'Copy to clipboard',
     downloadFile: 'Download file',
@@ -581,6 +595,7 @@ export const translations: Record<Language, Translations> = {
     isbnInvalidError: 'The entered ISBN does not have a valid format or checksum.',
     isbnSearchFailedPrompt: 'The book was not found online. Would you like to enter details manually?',
     addManuallyWithIsbn: 'Enter details manually',
+    storageSaveError: 'The browser could not save your changes. Export your library before refreshing or closing the page to avoid losing them.',
   },
 
   es: {
@@ -678,7 +693,7 @@ export const translations: Record<Language, Translations> = {
     singleScanning: 'Escaneo individual',
     batchScanning: 'Escaneo por lotes',
     startingCamera: 'Iniciando escáner de cámara...',
-    cameraError: 'Error al iniciar la cámara. Permite el acceso a la cámara en tu navegador.',
+    cameraError: 'No se pudo iniciar la cámara. Permite el acceso a la cámara en el navegador y abre esta página mediante HTTPS.',
     finishScanning: 'Finalizar escaneo',
     scannerProcessing: 'Procesando...',
     scannerReady: 'Listo para escanear',
@@ -701,6 +716,10 @@ export const translations: Record<Language, Translations> = {
     addToLibraryButton: 'Añadir a la biblioteca',
     discardButton: 'Descartar',
     batchReviewSub: 'Libros escaneados para guardar',
+    bookAlreadyInLibrary: 'Este título ya está en esta biblioteca.',
+    quantityAfterAdding: 'Total después de añadir:',
+    uniqueTitlesCount: 'Títulos distintos',
+    totalCopiesCount: 'Copias totales',
     chooseExportFormat: 'Elige el formato de exportación:',
     copyToClipboard: 'Copiar al portapapeles',
     downloadFile: 'Descargar archivo',
@@ -771,6 +790,7 @@ export const translations: Record<Language, Translations> = {
     isbnInvalidError: 'El ISBN ingresado no tiene un formato o dígito de control válido.',
     isbnSearchFailedPrompt: 'El libro no fue encontrado en línea. ¿Deseas ingresar los datos manualmente?',
     addManuallyWithIsbn: 'Ingresar datos manualmente',
+    storageSaveError: 'El navegador no pudo guardar los cambios. Exporta tu biblioteca antes de actualizar o cerrar la página para evitar perderlos.',
   },
 };
 

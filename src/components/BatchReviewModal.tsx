@@ -54,21 +54,25 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
   currentTheme = 'default',
 }) => {
   const activeThemeConfig = themes[currentTheme] || themes.default;
+  const totalCopies = books.reduce((total, book) => total + (book.quantity || 1), 0);
   if (!isOpen) return null;
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center ${activeThemeConfig.bgClass}/80 backdrop-blur-sm p-4`}>
-      <div className={`w-full max-w-xl ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl shadow-2xl overflow-hidden p-6 relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200`}>
+      <div role="dialog" aria-modal="true" aria-labelledby="batch-review-title" className={`w-full max-w-xl ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl shadow-2xl overflow-hidden p-6 relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200`}>
         <div className={`flex items-center gap-3 mb-4 pb-3 border-b ${activeThemeConfig.borderClass} flex-shrink-0`}>
           <div className={`p-2.5 ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} rounded-xl`}>
             <Layers className={`w-6 h-6 ${activeThemeConfig.accentClass}`} />
           </div>
           <div>
-            <h2 className={`text-lg font-bold ${activeThemeConfig.textPrimaryClass}`}>
-              {t.scannedBooksCount} ({books.length})
+            <h2 id="batch-review-title" className={`text-lg font-bold ${activeThemeConfig.textPrimaryClass}`}>
+              {t.scannedBooksCount}
             </h2>
             <p className={`text-xs ${activeThemeConfig.textSecondaryClass}`}>
               {t.batchReviewSub} {libraryName ? `(${libraryName})` : ''}
+            </p>
+            <p className={`text-xs font-semibold ${activeThemeConfig.textPrimaryClass}`}>
+              {t.uniqueTitlesCount}: {books.length} · {t.totalCopiesCount}: {totalCopies}
             </p>
           </div>
         </div>
@@ -96,6 +100,7 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
                   <div className={`text-xs ${activeThemeConfig.textSecondaryClass} space-y-0.5 mt-1`}>
                     {book.authors && <p>{t.authorLabel} {book.authors}</p>}
                     <div className={`flex flex-wrap gap-x-3 text-[11px] ${activeThemeConfig.textSecondaryClass}`}>
+                      <span>{t.quantity}: {book.quantity || 1} {t.pcs}</span>
                       {book.publishedYear && <span>{t.yearLabel} {book.publishedYear}</span>}
                       {book.publisher && <span>{t.publisherLabel} {book.publisher}</span>}
                       {book.isbn && <span className="font-mono">ISBN: {book.isbn}</span>}
@@ -106,7 +111,8 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
                 <button
                   onClick={() => onRemoveBook(book.id || book.isbn || '')}
                   title={t.delete}
-                  className={`${activeThemeConfig.textSecondaryClass} hover:text-rose-400 p-2 hover:bg-black/10 rounded-xl transition flex-shrink-0`}
+                  aria-label={`${t.delete}: ${book.title}`}
+                  className={`${activeThemeConfig.textSecondaryClass} hover:text-rose-400 min-h-11 min-w-11 p-2 hover:bg-black/10 rounded-xl transition flex-shrink-0`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -115,10 +121,10 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
           </div>
         )}
 
-        <div className={`flex gap-3 pt-4 border-t ${activeThemeConfig.borderClass} flex-shrink-0 mt-2`}>
+        <div className={`flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t ${activeThemeConfig.borderClass} flex-shrink-0 mt-2`}>
           <button
             onClick={onDiscardAll}
-            className={`flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonSecondaryClass} font-semibold transition text-sm flex items-center justify-center gap-2`}
+            className={`min-h-11 flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonSecondaryClass} font-semibold transition text-sm flex items-center justify-center gap-2`}
           >
             {t.discardAll}
           </button>
@@ -126,10 +132,10 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
           <button
             onClick={onSaveAll}
             disabled={books.length === 0}
-            className={`flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonPrimaryClass} disabled:opacity-50 font-semibold transition text-sm flex items-center justify-center gap-2 shadow-lg`}
+            className={`min-h-11 flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonPrimaryClass} disabled:opacity-50 font-semibold transition text-sm flex items-center justify-center gap-2 shadow-lg`}
           >
             <Check className="w-4 h-4" />
-            {t.saveAll} ({books.length})
+            {t.saveAll} ({totalCopies} {t.pcs})
           </button>
         </div>
       </div>

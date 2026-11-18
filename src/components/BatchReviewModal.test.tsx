@@ -55,6 +55,8 @@ describe('BatchReviewModal', () => {
     expect(screen.getAllByText(/Naskenované knihy/i).length).toBeGreaterThan(0);
     expect(screen.getByText('Babička')).toBeDefined();
     expect(screen.getByText('Fantastic Mr Fox')).toBeDefined();
+    expect(screen.getByRole('dialog', { name: translations.cs.scannedBooksCount })).toBeDefined();
+    expect(screen.getByRole('button', { name: `${translations.cs.delete}: ${sampleBooks[0].title}` })).toBeDefined();
   });
 
   it('calls onSaveAll when save button is clicked', () => {
@@ -74,5 +76,28 @@ describe('BatchReviewModal', () => {
     const saveButton = screen.getByText(/Uložit vše do knihovny/i);
     fireEvent.click(saveButton);
     expect(handleSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('distinguishes unique titles from total copies', () => {
+    const booksWithCopies = [
+      sampleBooks[0],
+      { ...sampleBooks[1], quantity: 3 },
+    ];
+
+    render(
+      <BatchReviewModal
+        isOpen={true}
+        books={booksWithCopies}
+        onRemoveBook={vi.fn()}
+        onSaveAll={vi.fn()}
+        onDiscardAll={vi.fn()}
+        t={translations.cs}
+      />
+    );
+
+    expect(
+      screen.getByText(`${translations.cs.uniqueTitlesCount}: 2 · ${translations.cs.totalCopiesCount}: 4`)
+    ).toBeDefined();
+    expect(screen.getByText(`${translations.cs.saveAll} (4 ${translations.cs.pcs})`)).toBeDefined();
   });
 });
