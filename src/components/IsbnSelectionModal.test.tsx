@@ -28,6 +28,7 @@ describe('IsbnSelectionModal', () => {
     );
 
     expect(screen.getByText(t.isbnSelectionTitle)).toBeDefined();
+    expect(screen.getByRole('dialog', { name: t.isbnSelectionTitle })).toBeDefined();
     expect(screen.getByText(t.singleIsbnFound)).toBeDefined();
 
     const input = screen.getByPlaceholderText(t.manualEntryPlaceholder) as HTMLInputElement;
@@ -60,6 +61,32 @@ describe('IsbnSelectionModal', () => {
 
     fireEvent.click(screen.getByText(t.confirmAndSearch));
     expect(handleConfirm).toHaveBeenCalledWith('8085983443');
+  });
+
+  it('rejects an invalid OCR checksum and allows correcting the ISBN', () => {
+    const handleConfirm = vi.fn();
+
+    render(
+      <IsbnSelectionModal
+        isOpen={true}
+        isbns={['9788020418006']}
+        onConfirm={handleConfirm}
+        onCancel={vi.fn()}
+        onRetake={vi.fn()}
+        t={t}
+      />
+    );
+
+    fireEvent.click(screen.getByText(t.confirmAndSearch));
+    expect(handleConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText(t.isbnInvalidError)).toBeDefined();
+
+    const input = screen.getByPlaceholderText(t.manualEntryPlaceholder) as HTMLInputElement;
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe('isbn-input-error');
+    fireEvent.change(input, { target: { value: '9788020418005' } });
+    fireEvent.click(screen.getByText(t.confirmAndSearch));
+    expect(handleConfirm).toHaveBeenCalledWith('9788020418005');
   });
 
   it('shows no ISBN found notice when list is empty and allows retake', () => {

@@ -5,6 +5,7 @@ import type { ThemeId } from './types/theme';
 import { translations, formatBookCount } from './services/i18n';
 import { themes } from './types/theme';
 import { fetchBookByIsbnDetailed, normalizeIsbn } from './services/bookService';
+import { parseStoredBooks, parseStoredLibraries, saveToLocalStorage } from './services/storageService';
 import { MainMenu } from './components/MainMenu';
 import { SettingsView } from './components/SettingsView';
 import { ScannerComponent } from './components/Scanner';
@@ -37,7 +38,7 @@ export default function App() {
   // Language state
   const [language, setLanguage] = useState<Language>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_LANG);
+      const saved = window.localStorage.getItem(STORAGE_KEY_LANG);
       if (saved && (saved === 'cs' || saved === 'en' || saved === 'es')) {
         return saved as Language;
       }
@@ -50,7 +51,7 @@ export default function App() {
   // Theme state
   const [theme, setTheme] = useState<ThemeId>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_THEME);
+      const saved = window.localStorage.getItem(STORAGE_KEY_THEME);
       if (saved && themes[saved as ThemeId]) {
         return saved as ThemeId;
       }
@@ -65,11 +66,8 @@ export default function App() {
 
   const [libraries, setLibraries] = useState<Library[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_LIBRARIES);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
+      const parsed = parseStoredLibraries(window.localStorage.getItem(STORAGE_KEY_LIBRARIES));
+      if (parsed.length > 0) return parsed;
     } catch (e) {
       console.error('Failed to parse libraries from localStorage', e);
     }
@@ -80,24 +78,7 @@ export default function App() {
 
   const [books, setBooks] = useState<Book[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_BOOKS);
-      if (saved) {
-        const parsed: any[] = JSON.parse(saved);
-        return parsed.map((b, idx) => {
-          const rawIsbn = b.isbn ? String(b.isbn).trim() : '';
-          const hasRealIsbn = rawIsbn && !rawIsbn.startsWith('NO_ISBN_');
-          return {
-            ...b,
-            id: b.id || `book_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 7)}`,
-            isbn: hasRealIsbn ? rawIsbn : (rawIsbn.startsWith('NO_ISBN_') ? undefined : (rawIsbn || undefined)),
-            libraryId: b.libraryId || 'default',
-            quantity: typeof b.quantity === 'number' ? b.quantity : 1,
-            readingStatus: b.readingStatus || 'unread',
-            description: b.description || undefined,
-          } as Book;
-        });
-      }
-      return [];
+      return parseStoredBooks(window.localStorage.getItem(STORAGE_KEY_BOOKS));
     } catch {
       return [];
     }
@@ -115,43 +96,40 @@ export default function App() {
   const [isScannerProcessing, setIsScannerProcessing] = useState(false);
   const [showScannerSuccessCheck, setShowScannerSuccessCheck] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [storageSaveFailures, setStorageSaveFailures] = useState<Record<string, boolean>>({});
   const [resumeTrigger, setResumeTrigger] = useState(0);
+
+  const persistToStorage = useCallback((key: string, value: string) => {
+    const succeeded = saveToLocalStorage(key, value);
+    if (!succeeded) console.error(`Failed to save ${key} to localStorage`);
+
+    queueMicrotask(() => {
+      setStorageSaveFailures((previous) => {
+        if (previous[key] === !succeeded) return previous;
+        return { ...previous, [key]: !succeeded };
+      });
+    });
+  }, []);
 
   // Sync language with localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_LANG, language);
-    } catch (e) {
-      console.error('Failed to save language to localStorage', e);
-    }
-  }, [language]);
+    persistToStorage(STORAGE_KEY_LANG, language);
+  }, [language, persistToStorage]);
 
   // Sync theme with localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_THEME, theme);
-    } catch (e) {
-      console.error('Failed to save theme to localStorage', e);
-    }
-  }, [theme]);
+    persistToStorage(STORAGE_KEY_THEME, theme);
+  }, [theme, persistToStorage]);
 
   // Sync books with localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(books));
-    } catch (e) {
-      console.error('Failed to save books to localStorage', e);
-    }
-  }, [books]);
+    persistToStorage(STORAGE_KEY_BOOKS, JSON.stringify(books));
+  }, [books, persistToStorage]);
 
   // Sync libraries with localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_LIBRARIES, JSON.stringify(libraries));
-    } catch (e) {
-      console.error('Failed to save libraries to localStorage', e);
-    }
-  }, [libraries]);
+    persistToStorage(STORAGE_KEY_LIBRARIES, JSON.stringify(libraries));
+  }, [libraries, persistToStorage]);
 
   // Show floating notification message
   const showNotification = useCallback((msg: string) => {
@@ -435,6 +413,15 @@ export default function App() {
             <Info className={`w-5 h-5 ${activeThemeConfig.accentClass} flex-shrink-0`} />
             <span>{notification}</span>
           </div>
+        </div>
+      )}
+
+      {Object.values(storageSaveFailures).some(Boolean) && (
+        <div
+          role="alert"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-11/12 rounded-2xl border border-amber-500 bg-amber-950 px-4 py-3 text-sm font-medium text-amber-100 shadow-xl"
+        >
+          {t.storageSaveError}
         </div>
       )}
 

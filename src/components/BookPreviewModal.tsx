@@ -29,7 +29,7 @@ export const BookPreviewModal: React.FC<BookPreviewModalProps> = ({
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center ${activeThemeConfig.bgClass}/80 backdrop-blur-sm p-4`}>
-      <div className={`w-full max-w-md ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl shadow-2xl overflow-hidden p-6 relative animate-in fade-in zoom-in-95 duration-200`}>
+      <div role="dialog" aria-modal="true" aria-labelledby="book-preview-title" className={`w-full max-w-md ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl shadow-2xl overflow-y-auto p-6 relative max-h-[90vh] animate-in fade-in zoom-in-95 duration-200`}>
         <div className="flex items-center gap-3 mb-4">
           <div className={`p-2.5 ${activeThemeConfig.bgClass} border ${activeThemeConfig.borderClass} rounded-xl`}>
             <BookIcon className={`w-6 h-6 ${activeThemeConfig.accentClass}`} />
@@ -63,7 +63,7 @@ export const BookPreviewModal: React.FC<BookPreviewModalProps> = ({
           )}
 
           <div className="flex-1 min-w-0 space-y-3">
-            <h2 className={`text-lg font-bold ${activeThemeConfig.textPrimaryClass} leading-snug break-words`}>
+            <h2 id="book-preview-title" className={`text-lg font-bold ${activeThemeConfig.textPrimaryClass} leading-snug break-words`}>
               {book.title}
             </h2>
 
@@ -87,10 +87,22 @@ export const BookPreviewModal: React.FC<BookPreviewModalProps> = ({
           </div>
         </div>
 
-        <div className="flex gap-3">
+        {book.quantity > 1 && (
+          <div
+            role="status"
+            className={`mb-4 rounded-xl border ${activeThemeConfig.borderClass} ${activeThemeConfig.bgClass} px-4 py-3 text-xs ${activeThemeConfig.textSecondaryClass}`}
+          >
+            <p>{t.bookAlreadyInLibrary}</p>
+            <p className={`mt-1 font-semibold ${activeThemeConfig.textPrimaryClass}`}>
+              {t.quantityAfterAdding} {book.quantity} {t.pcs}
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
           <button
             onClick={onDiscard}
-            className={`flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonSecondaryClass} font-semibold transition flex items-center justify-center gap-2`}
+            className={`min-h-11 flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonSecondaryClass} font-semibold transition flex items-center justify-center gap-2`}
           >
             <Trash2 className="w-4 h-4 opacity-70" />
             {t.discardButton}
@@ -98,7 +110,7 @@ export const BookPreviewModal: React.FC<BookPreviewModalProps> = ({
 
           <button
             onClick={onAdd}
-            className={`flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonPrimaryClass} font-semibold transition flex items-center justify-center gap-2 shadow-lg`}
+            className={`min-h-11 flex-1 py-3 px-4 rounded-xl ${activeThemeConfig.buttonPrimaryClass} font-semibold transition flex items-center justify-center gap-2 shadow-lg`}
           >
             <Plus className="w-5 h-5" />
             {t.addToLibraryButton}

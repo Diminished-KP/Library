@@ -75,6 +75,20 @@ describe('ScannerComponent', () => {
     expect(mockStart).toHaveBeenCalled();
   });
 
+  it('shows camera setup guidance and keeps manual ISBN entry available on camera failure', async () => {
+    mockStart.mockRejectedValueOnce(new Error('Camera permission denied'));
+
+    await act(async () => {
+      render(<ScannerComponent {...defaultProps} />);
+    });
+
+    const cameraError = screen.getByText(translations.cs.cameraError);
+    expect(cameraError).toBeDefined();
+    expect(cameraError.parentElement?.querySelector('button')?.textContent).toContain(
+      translations.cs.manualInput
+    );
+  });
+
   it('switches to Text ISBN mode and shows capture button', async () => {
     await act(async () => {
       render(<ScannerComponent {...defaultProps} />);

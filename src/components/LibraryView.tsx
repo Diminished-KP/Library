@@ -324,10 +324,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <span>{t.mainMenu}</span>
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
           <button
             onClick={onNavigateToScanner}
-            className={`px-3 sm:px-4 py-2 ${activeThemeConfig.buttonPrimaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow-lg`}
+            className={`min-h-11 flex-1 sm:flex-none px-3 sm:px-4 py-2 ${activeThemeConfig.buttonPrimaryClass} font-semibold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg`}
           >
             <Scan className="w-4 h-4" />
             <span>{t.addBooksToLibrary}</span>
@@ -335,7 +335,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           {onOpenManualEntryNoIsbn && (
             <button
               onClick={onOpenManualEntryNoIsbn}
-              className={`px-3 sm:px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md`}
+              className={`min-h-11 flex-1 sm:flex-none px-3 sm:px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md`}
               title={t.manualAddFromLibrary}
             >
               <Plus className="w-4 h-4" />
@@ -344,7 +344,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           )}
           <button
             onClick={onOpenAddLibraryModal}
-            className={`px-3 sm:px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md`}
+            aria-label={t.addLibrary}
+            className={`min-h-11 min-w-11 px-3 sm:px-4 py-2 ${activeThemeConfig.buttonSecondaryClass} font-semibold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md`}
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">{t.addLibrary}</span>
@@ -422,8 +423,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <button
                 onClick={() => setIsFilterOpen((prev) => !prev)}
                 aria-label={t.filters}
+                aria-expanded={isFilterOpen}
+                aria-controls="library-filters"
                 data-testid="library-filter-button"
-                className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm border ${
+                className={`min-h-11 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm border ${
                   activeFiltersCount > 0
                     ? `${activeThemeConfig.buttonPrimaryClass} border-transparent`
                     : `${activeThemeConfig.cardBgClass} ${activeThemeConfig.borderClass} ${activeThemeConfig.textPrimaryClass} hover:${activeThemeConfig.accentClass}`
@@ -442,6 +445,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               {/* Single Filter Dropdown Menu */}
               {isFilterOpen && (
                 <div
+                  id="library-filters"
                   className={`absolute left-0 mt-2 w-72 sm:w-80 ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-2xl p-4 shadow-2xl z-30 space-y-3.5 animate-in fade-in duration-150 max-h-[80vh] overflow-y-auto`}
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-white/10">
@@ -600,9 +604,35 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           {t.noMatchingBooksFound} &quot;{searchTerm}&quot;.
         </div>
       ) : (
-        <div className="flex gap-4 items-start relative">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start relative">
+          {/* Mobile alphabet navigation: horizontal and sized for touch */}
+          <nav
+            aria-label={t.goToSection}
+            className={`order-1 sm:order-2 sticky top-16 sm:top-4 flex w-full sm:w-7 flex-row sm:flex-col items-center gap-1 sm:gap-0 ${activeThemeConfig.cardBgClass}/80 border ${activeThemeConfig.borderClass} rounded-xl p-1 shadow-lg text-[10px] font-bold ${activeThemeConfig.textSecondaryClass} select-none overflow-x-auto sm:overflow-x-hidden sm:max-h-[80vh] sm:overflow-y-auto flex-shrink-0`}
+          >
+            {alphabetLetters.map((letter) => {
+              const hasBooks = !!groupedBooks[letter];
+              return (
+                <button
+                  key={letter}
+                  onClick={() => scrollToSection(letter)}
+                  disabled={!hasBooks}
+                  aria-label={hasBooks ? `${t.goToSection} ${letter}` : `${t.noBooksStartingWith} ${letter}`}
+                  className={`${hasBooks ? 'flex' : 'hidden sm:flex'} w-11 h-11 sm:w-5 sm:h-5 flex-shrink-0 items-center justify-center rounded transition ${
+                    hasBooks
+                      ? `${activeThemeConfig.accentClass} hover:bg-blue-600 hover:text-white cursor-pointer font-extrabold`
+                      : 'opacity-30 cursor-default'
+                  }`}
+                  title={hasBooks ? `${t.goToSection} ${letter}` : `${t.noBooksStartingWith} ${letter}`}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </nav>
+
           {/* Main Book List with Alphabet Group Headers */}
-          <div className="flex-1 min-w-0 space-y-6">
+          <div className="order-2 sm:order-1 flex-1 min-w-0 space-y-6">
             {alphabetLetters.map((letter) => {
               const booksInLetter = groupedBooks[letter];
               if (!booksInLetter || booksInLetter.length === 0) return null;
@@ -631,7 +661,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                                 handleBookDeleteClick(book);
                               }}
                               title={t.deleteFromLibrary}
-                              className={`absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm text-slate-300 hover:text-rose-400 hover:bg-black/80 transition opacity-80 group-hover:opacity-100 shadow-sm`}
+                              aria-label={`${t.deleteFromLibrary}: ${book.title}`}
+                              className="absolute top-2 right-2 min-h-11 min-w-11 p-2 rounded-lg bg-black/60 backdrop-blur-sm text-slate-300 hover:text-rose-400 hover:bg-black/80 transition opacity-80 group-hover:opacity-100 shadow-sm"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -661,27 +692,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             })}
           </div>
 
-          {/* Alphabet Sidebar Index */}
-          <div className={`sticky top-4 flex flex-col items-center ${activeThemeConfig.cardBgClass}/80 border ${activeThemeConfig.borderClass} rounded-xl p-1 shadow-lg text-[10px] font-bold ${activeThemeConfig.textSecondaryClass} select-none max-h-[80vh] overflow-y-auto w-7 flex-shrink-0`}>
-            {alphabetLetters.map((letter) => {
-              const hasBooks = !!groupedBooks[letter];
-              return (
-                <button
-                  key={letter}
-                  onClick={() => scrollToSection(letter)}
-                  disabled={!hasBooks}
-                  className={`w-5 h-5 flex items-center justify-center rounded transition ${
-                    hasBooks
-                      ? `${activeThemeConfig.accentClass} hover:bg-blue-600 hover:text-white cursor-pointer font-extrabold`
-                      : 'opacity-30 cursor-default'
-                  }`}
-                  title={hasBooks ? `${t.goToSection} ${letter}` : `${t.noBooksStartingWith} ${letter}`}
-                >
-                  {letter}
-                </button>
-              );
-            })}
-          </div>
         </div>
       )}
 

@@ -53,8 +53,8 @@ export const IsbnSelectionModal: React.FC<IsbnSelectionModalProps> = ({
       setInputError(t.manualEntryPlaceholder);
       return;
     }
-    if (clean.length !== 10 && clean.length !== 13) {
-      setInputError(t.manualEntryPlaceholder);
+    if (!isValidIsbn(clean)) {
+      setInputError(t.isbnInvalidError);
       return;
     }
     onConfirm(clean);
@@ -65,7 +65,10 @@ export const IsbnSelectionModal: React.FC<IsbnSelectionModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
       <div
-        className={`w-full max-w-md ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl p-6 shadow-2xl flex flex-col relative`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="isbn-selection-title"
+        className={`w-full max-w-md ${activeThemeConfig.cardBgClass} border ${activeThemeConfig.borderClass} rounded-3xl p-6 shadow-2xl flex flex-col relative max-h-[90vh] overflow-y-auto`}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -73,13 +76,14 @@ export const IsbnSelectionModal: React.FC<IsbnSelectionModalProps> = ({
             <div className={`p-2 rounded-xl bg-blue-500/10 ${activeThemeConfig.accentClass}`}>
               <BookOpen className="w-5 h-5" />
             </div>
-            <h3 className={`text-base font-bold ${activeThemeConfig.textPrimaryClass}`}>
+            <h3 id="isbn-selection-title" className={`text-base font-bold ${activeThemeConfig.textPrimaryClass}`}>
               {t.isbnSelectionTitle}
             </h3>
           </div>
           <button
             onClick={onCancel}
-            className={`p-1.5 rounded-lg ${activeThemeConfig.textSecondaryClass} hover:${activeThemeConfig.textPrimaryClass} hover:bg-white/10 transition`}
+            aria-label={t.close}
+            className={`min-h-11 min-w-11 p-2 rounded-lg ${activeThemeConfig.textSecondaryClass} hover:${activeThemeConfig.textPrimaryClass} hover:bg-white/10 transition`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -154,12 +158,14 @@ export const IsbnSelectionModal: React.FC<IsbnSelectionModalProps> = ({
                 if (inputError) setInputError(null);
               }}
               placeholder={t.manualEntryPlaceholder}
+              aria-invalid={!!inputError}
+              aria-describedby={inputError ? 'isbn-input-error' : undefined}
               autoFocus
               className={`w-full ${activeThemeConfig.bgClass} border ${
                 inputError ? 'border-rose-500' : activeThemeConfig.borderClass
-              } ${activeThemeConfig.textPrimaryClass} font-mono text-sm font-semibold rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 transition`}
+              } ${activeThemeConfig.textPrimaryClass} font-mono text-base sm:text-sm font-semibold rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 transition`}
             />
-            {inputError && <p className="text-rose-400 text-xs mt-1">{inputError}</p>}
+            {inputError && <p id="isbn-input-error" role="alert" className="text-rose-400 text-xs mt-1">{inputError}</p>}
           </div>
 
           {/* Action buttons */}

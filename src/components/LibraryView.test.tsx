@@ -68,6 +68,15 @@ describe('LibraryView', () => {
       />
     );
 
+    const alphabetNavigation = screen.getByRole('navigation', {
+      name: translations.cs.goToSection,
+    });
+    expect(alphabetNavigation.className).toContain('overflow-x-auto');
+    expect(alphabetNavigation.className).toContain('sm:flex-col');
+    const alphabetButtons = alphabetNavigation.querySelectorAll('button');
+    expect(alphabetButtons.length).toBeGreaterThan(0);
+    expect(alphabetButtons[0].className).toContain('w-11 h-11');
+
     // Checks title and author
     expect(screen.getByText('Babička')).toBeDefined();
     expect(screen.getByText('Božena Němcová')).toBeDefined();
@@ -123,7 +132,10 @@ describe('LibraryView', () => {
 
     // Open the single filter menu
     const filterBtn = screen.getByTestId('library-filter-button');
+    expect(filterBtn.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(filterBtn);
+    expect(filterBtn.getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById(filterBtn.getAttribute('aria-controls') || '')).not.toBeNull();
 
     // Filter by genre 'Sci-Fi'
     const genreSelect = screen.getByDisplayValue(translations.cs.allGenres);
@@ -155,6 +167,7 @@ describe('LibraryView', () => {
     const babickaHeadings = screen.getAllByText('Babička');
     const babickaCard = babickaHeadings[0].closest('.group')!;
     const deleteButton = babickaCard.querySelector('button[title="Smazat z knihovny"]')!;
+    expect(deleteButton.className).toContain('min-h-11 min-w-11');
     fireEvent.click(deleteButton);
 
     // Modal should appear asking whether to decrement or delete all
